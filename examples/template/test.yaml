@@ -1,0 +1,66 @@
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: openstack-clusterdeployment-generator
+  title: OpenStack Cluster Deployment
+  description: Generates a ClusterDeployment resource for OpenStack
+spec:
+  owner: user:guest
+  type: clusterdeployment
+  parameters:
+    - title: Cluster Deployment Configuration
+      required:
+        - namespace
+        - clusterNameSuffix
+        - controlPlaneFlavor
+        - nodeFlavor
+        - imageName
+        - cloudsFile
+      properties:
+        namespace:
+          title: Namespace
+          type: string
+          description: Kubernetes namespace for the ClusterDeployment
+          default: "default"
+        clusterNameSuffix:
+          title: Cluster Name Suffix
+          type: string
+          description: Suffix for the cluster name (e.g., dev, prod)
+          default: "dev"
+        controlPlaneFlavor:
+          title: Control Plane Machine Flavor
+          type: string
+          description: OpenStack flavor for control plane nodes
+          default: "m1.large"
+        nodeFlavor:
+          title: Node Machine Flavor
+          type: string
+          description: OpenStack flavor for worker nodes
+          default: "m1.medium"
+        imageName:
+          title: OpenStack Image Name
+          type: string
+          description: Name of the OpenStack image to use
+          default: "ubuntu-20.04"
+        cloudsFile:
+          title: Clouds YAML File
+          type: string
+          description: Upload your clouds.yaml file
+          ui:widget: file
+          ui:options:
+            accept: '.yaml,.yml'
+  steps:
+    - id: generate-clusterdeployment
+      name: Generate and Apply ClusterDeployment
+      action: custom:generate-openstack-clusterdeployment
+      input:
+        namespace: ${{ parameters.namespace }}
+        clusterNameSuffix: ${{ parameters.clusterNameSuffix }}
+        controlPlaneFlavor: ${{ parameters.controlPlaneFlavor }}
+        nodeFlavor: ${{ parameters.nodeFlavor }}
+        imageName: ${{ parameters.imageName }}
+        cloudsFilePath: ${{ parameters.cloudsFile }}
+  output:
+    links:
+      - title: Generated ClusterDeployment
+        url: ${{ 'local-output' }}  # Removed publish step reference
