@@ -1,0 +1,60 @@
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: azure-clusterdeployment-generator
+  title: Azure Cluster Deployment
+  description: Generates a ClusterDeployment resource for Azure
+spec:
+  owner: user:guest
+  type: clusterdeployment
+  parameters:
+    - title: Azure Cluster Configuration and Options
+      required:
+        - namespace # This will be handled by our custom field
+        - clusterNameSuffix
+        - controlPlaneFlavor
+        - nodeFlavor
+      properties:
+        # --- Basic Configuration ---
+        # This field will use our custom component
+        namespace:
+          title: Namespace # Title is still defined in YAML
+          type: string
+          description: Dynamically suggested namespace. # Description is still defined in YAML
+          ui:field: DynamicNamespaceField # <--- This is the key link!
+
+        clusterNameSuffix:
+          title: Cluster Name Suffix
+          type: string
+          description: Suffix for the cluster name (e.g., dev, prod)
+          default: "dev"
+        controlPlaneFlavor:
+          title: Control Plane Machine Flavor
+          type: string
+          description: Azure VM size for control plane nodes (e.g., Standard_DS2_v2)
+          default: "Standard_DS2_v2"
+        nodeFlavor:
+          title: Worker Node Machine Flavor
+          type: string
+          description: Azure VM size for worker nodes (e.g., Standard_D2_v2)
+          default: "Standard_D2_v2"
+
+        # --- Checkbox Options (Rest omitted for brevity) ---
+        # ... (your 5 checkbox properties with column hints) ...
+
+  steps:
+    - id: generate-clusterdeployment
+      name: Generate and Apply ClusterDeployment
+      action: custom:generate-azure-clusterdeployment
+      input:
+        # The value from the custom field is passed like any other parameter
+        namespace: ${{ parameters.namespace }}
+        clusterNameSuffix: ${{ parameters.clusterNameSuffix }}
+        controlPlaneFlavor: ${{ parameters.controlPlaneFlavor }}
+        nodeFlavor: ${{ parameters.nodeFlavor }}
+        # ... pass checkbox values ...
+
+  output:
+    links:
+      - title: Generated ClusterDeployment
+        url: ${{ 'local-output' }}
