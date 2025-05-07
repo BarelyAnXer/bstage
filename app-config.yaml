@@ -66,9 +66,10 @@ auth:
   # see https://backstage.io/docs/auth/ to learn about auth providers
   providers:
     # See https://backstage.io/docs/auth/guest/provider
-    guest: {}
+   guest:
+      dangerouslyAllowOutsideDevelopment: true
 
-scaffolder:
+# scaffolder:
   # see https://backstage.io/docs/features/software-templates/configuration for software template options
 
 catalog:
@@ -78,23 +79,26 @@ catalog:
   rules:
     - allow: [Component, System, API, Resource, Location]
   locations:
-    # Local example data, file locations are relative to the backend process, typically `packages/backend`
+    # Local example data, file locations are relative to the backend process working directory in the container (/app)
     - type: file
-      target: ../../examples/entities.yaml
-
+      target: examples/entities.yaml # Corrected path
     # Local example template
     - type: file
-      target: ../../examples/template/template.yaml
+      target: examples/template/template.yaml # Corrected path
       rules:
         - allow: [Template]
     - type: file
-      target: ../../examples/template/test.yaml
+      target: ../../examples/template/openstack-clusterdeplomeny.yaml
       rules:
         - allow: [Template]
-
+    - type: file
+      target: ../../examples/template/azure-clusterdeployment.yaml
+      rules:
+        - allow: [Template]
+    
     # Local example organizational data
     - type: file
-      target: ../../examples/org.yaml
+      target: examples/org.yaml # Corrected path
       rules:
         - allow: [User, Group]
 
@@ -111,7 +115,7 @@ catalog:
   # New adopters are encouraged to enable it as this behavior will be the default in a future release.
   useUrlReadersSearch: true
 
-kubernetes:
+# kubernetes:
   # see https://backstage.io/docs/features/kubernetes/configuration for kubernetes configuration options
 
 # see https://backstage.io/docs/permissions/getting-started for more on the permission framework
