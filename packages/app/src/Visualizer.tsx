@@ -128,27 +128,27 @@ const useStyles = makeStyles((theme: Theme) =>
       padding: theme.spacing(3, 0),
     },
     stepLabel: { // Combined Material-UI v4 approach for StepLabel styling
-        '& .MuiStepLabel-label': {
-            color: '#cbd5e0',
-            '&$active': { // Use $active for referring to active state class
-                color: '#63b3ed',
-                fontWeight: 'bold',
-            },
-            '&$completed': { // Use $completed for referring to completed state class
-                color: '#48bb78',
-            },
+      '& .MuiStepLabel-label': {
+        color: '#cbd5e0',
+        '&$active': { // Use $active for referring to active state class
+          color: '#63b3ed',
+          fontWeight: 'bold',
         },
-        '& .MuiStepIcon-root': {
-            color: '#4a5568',
-            '&$active': {
-                color: '#63b3ed',
-            },
-            '&$completed': {
-                color: '#48bb78',
-            },
+        '&$completed': { // Use $completed for referring to completed state class
+          color: '#48bb78',
         },
-        active: {}, // Required for $active selector to work
-        completed: {}, // Required for $completed selector to work
+      },
+      '& .MuiStepIcon-root': {
+        color: '#4a5568',
+        '&$active': {
+          color: '#63b3ed',
+        },
+        '&$completed': {
+          color: '#48bb78',
+        },
+      },
+      active: {}, // Required for $active selector to work
+      completed: {}, // Required for $completed selector to work
     },
     formSection: {
       marginTop: theme.spacing(3),
@@ -211,16 +211,16 @@ const useStyles = makeStyles((theme: Theme) =>
       },
     },
     loadingContainer: { // Style for loading/error messages
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        height: '200px',
-        flexDirection: 'column',
-        color: '#e2e8f0',
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      height: '200px',
+      flexDirection: 'column',
+      color: '#e2e8f0',
     },
     errorText: {
-        color: theme.palette.error.main,
-        marginLeft: theme.spacing(1),
+      color: theme.palette.error.main,
+      marginLeft: theme.spacing(1),
     }
   }),
 );
@@ -333,14 +333,14 @@ const ConfigurationPage: React.FC<ConfigurationPageProps> = ({ template, onBack,
   }, {} as Record<string, string>) || {};
 
   const [formValues, setFormValues] = useState<Record<string, string>>(initialFormValues);
-  
+
   // Reset formValues when template changes (e.g., if data loading modifies the selectedTemplate structure before this page is shown)
   useEffect(() => {
     setFormValues(
-        template.configFields?.reduce((acc, field) => {
-            acc[field.id] = field.defaultValue;
-            return acc;
-        }, {} as Record<string, string>) || {}
+      template.configFields?.reduce((acc, field) => {
+        acc[field.id] = field.defaultValue;
+        return acc;
+      }, {} as Record<string, string>) || {}
     );
   }, [template]);
 
@@ -427,7 +427,7 @@ const ConfigurationPage: React.FC<ConfigurationPageProps> = ({ template, onBack,
         {steps.map((label) => (
           <Step key={label}>
             <StepLabel
-              StepIconProps={{ classes: { root: classes.stepLabel, active: classes.stepLabel.active, completed: classes.stepLabel.completed } }}
+              StepIconProps={{ classes: { root: classes.stepLabel,  active: classes.stepLabel, completed: classes.stepLabel } }}
               classes={{ label: classes.stepLabel }}
             >
               {label}
@@ -451,13 +451,13 @@ const ConfigurationPage: React.FC<ConfigurationPageProps> = ({ template, onBack,
             Advanced Options
           </Typography>
           {renderFieldsForStep(1)}
-           {(!template.configFields?.some(f => f.stepGroup === 1)) && 
-             <Typography style={{ color: '#a0aec0' }}>No advanced options available for this template.</Typography>
-           }
+          {(!template.configFields?.some(f => f.stepGroup === 1)) &&
+            <Typography style={{ color: '#a0aec0' }}>No advanced options available for this template.</Typography>
+          }
         </Box>
       )}
 
-      {activeStep === steps.length -1 && (
+      {activeStep === steps.length - 1 && (
         <Box className={classes.formSection}>
           <Typography variant="h6" gutterBottom style={{ color: '#E5E7EB', marginBottom: '16px' }}>
             Review Your Configuration
@@ -522,26 +522,6 @@ const initialTemplatesArray: TemplateData[] = [
       { id: 'clusterNameSuffix', label: 'Cluster Name Suffix', defaultValue: 'dev', helperText: 'Suffix for the cluster name (e.g., dev, prod)', type: 'text', stepGroup: 0 },
       { id: 'controlPlaneFlavor', label: 'Control Plane Machine Flavor', defaultValue: 'Standard_DS2_v2', helperText: 'Azure VM size for control plane nodes', type: 'text', stepGroup: 0 },
       { id: 'workerNodeFlavor', label: 'Worker Node Machine Flavor', defaultValue: 'Standard_D2_v2', helperText: 'Azure VM size for worker nodes', type: 'text', stepGroup: 0 },
-      // Original stepGroup 1 fields for 'azure-cluster' will be replaced by fetched data.
-      // You can keep them here if you want them as a fallback if API fails,
-      // or remove them if fetched data is the sole source for stepGroup 1.
-      // For this example, fetched data will replace these.
-      // {
-      //   id: 'enableMonitoring',
-      //   label: 'Enable Advanced Monitoring',
-      //   defaultValue: 'true',
-      //   helperText: 'Check to enable advanced monitoring features.',
-      //   type: 'checkbox',
-      //   stepGroup: 1,
-      // },
-      // {
-      //   id: 'useSpotInstances',
-      //   label: 'Use Spot Instances for Worker Nodes',
-      //   defaultValue: 'false',
-      //   helperText: 'Utilize cheaper spot instances if available.',
-      //   type: 'checkbox',
-      //   stepGroup: 1,
-      // },
     ],
   },
   {
@@ -681,27 +661,27 @@ export const Visualizer = () => {
         <Header title="Error" subtitle="Failed to load template configurations" />
         <Content>
           <Box className={classes.loadingContainer}>
-            <ErrorIcon style={{ fontSize: 48, color: 'red' }}/>
+            <ErrorIcon style={{ fontSize: 48, color: 'red' }} />
             <Typography variant="h6" style={{ marginTop: '16px', color: 'red' }}>
               Oops! Something went wrong.
             </Typography>
             <Typography style={{ color: '#ffcccb' }}>{error}</Typography>
             <Button
-                variant="contained"
-                color="primary"
-                style={{ marginTop: '20px' }}
-                onClick={() => { // Basic retry, re-triggers useEffect if component re-mounts or key changes
-                    setIsLoading(true);
-                    setError(null);
-                    // For a true retry, you might need to extract the fetch logic
-                    // into a function that can be called again, or change a dependency in useEffect.
-                    // This simplistic retry relies on potentially re-triggering the initial fetch.
-                    // A better way is to have a dedicated refetch function.
-                    // For now, we'll just reset state to allow manual refresh or re-navigation.
-                    window.location.reload(); // Simplest form of "retry" for this example
-                }}
+              variant="contained"
+              color="primary"
+              style={{ marginTop: '20px' }}
+              onClick={() => { // Basic retry, re-triggers useEffect if component re-mounts or key changes
+                setIsLoading(true);
+                setError(null);
+                // For a true retry, you might need to extract the fetch logic
+                // into a function that can be called again, or change a dependency in useEffect.
+                // This simplistic retry relies on potentially re-triggering the initial fetch.
+                // A better way is to have a dedicated refetch function.
+                // For now, we'll just reset state to allow manual refresh or re-navigation.
+                window.location.reload(); // Simplest form of "retry" for this example
+              }}
             >
-                Try Again
+              Try Again
             </Button>
           </Box>
         </Content>

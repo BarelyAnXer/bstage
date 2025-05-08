@@ -15,19 +15,7 @@ export const healthPlugin = createBackendPlugin({
           const target = "https://github.com/k0rdent/catalog/blob/main/apps"
 
           try {
-            const urls = await discoverYamlFiles(target);
-            // this.logger.info(`Found ${urls.length} YAML files to process`);
-            console.log(urls)
-           
-            for (const url of urls) {
-              // this.logger.info(`Processing file: ${url}`);
-        
-              // Process the actual YAML instead of using a hardcoded entity
-              const entity = await fetchAndProcessYaml(url);
-              console.log(entity, "ENTITY")
-        
-            }
-
+            const urls = await discoverYamlFiles(target); 
             const processedEntities: AppEntity[] = [];
 
             for (const url of urls) {
