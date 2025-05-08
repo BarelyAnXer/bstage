@@ -12,163 +12,20 @@ import {
   Step,
   StepLabel,
   Paper,
+  Checkbox,
+  FormControlLabel,
+  CircularProgress, // For loading indicator
+  // FormHelperText,
 } from '@material-ui/core';
 import { makeStyles, createStyles, Theme } from '@material-ui/core/styles';
-import { Content, Header, Page } from '@backstage/core-components';
+import { Content, Header, Page, Progress } from '@backstage/core-components'; // Added Progress
 import FilterListIcon from '@material-ui/icons/FilterList';
 import StarBorderIcon from '@material-ui/icons/StarBorder';
 import AccountCircleIcon from '@material-ui/icons/AccountCircle';
 import ArrowBackIcon from '@material-ui/icons/ArrowBack';
-import * as yaml from 'js-yaml';
+import ErrorIcon from '@material-ui/icons/Error'; // For error display
 
-const readLocation = async () => {
-  const target = "https://github.com/k0rdent/catalog/blob/main/apps"
-
-  try {
-    const urls = await discoverYamlFiles(target);
-    // this.logger.info(`Found ${urls.length} YAML files to process`);
-    console.log(urls)
-    for (const url of urls) {
-      // this.logger.info(`Processing file: ${url}`);
-
-      // Process the actual YAML instead of using a hardcoded entity
-      const entity = await fetchAndProcessYaml(url);
-      console.log(entity)
-
-      // Only emit if we got a valid entity back (not null)
-      // if (entity) {
-      //   this.logger.info(`Emitting entity: ${entity.metadata.name}`);
-      //   // emit(processingResult.entity(location, entity));
-      // } else {
-      //   this.logger.info(`Skipping entity from ${url} (returned null)`);
-      // }
-    }
-    return true;
-  } catch (errro: any) {
-    // console.log(`Failed to read location ${location.target}, ${error}`)
-    return false;
-  }
-  // throw error;
-}
-
-const fetchAndProcessYaml = async (url: string) => {
-  const githubToken = "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"
-  const headers: Record<string, string> = {};
-  if (githubToken) {
-    headers.Authorization = `token ${githubToken}`;
-  }
-  // this.logger.debug(`Fetching YAML from ${url}`);
-  const response = await fetch(url, { headers });
-  if (!response.ok) {
-    throw new Error(`Failed to fetch ${url}: ${response.status} ${response.statusText}`);
-  }
-  const text = await response.text();
-  let data;
-  try {
-    data = yaml.load(text);
-    if (!data || typeof data !== 'object') {
-      // this.logger.warn(`Skipping ${url}: YAML content is invalid`);
-      return null;
-    }
-  } catch (error) {
-    // this.logger.warn(`Skipping ${url}: YAML parsing failed - ${error}`);
-    return null;
-  }
-
-  // Type assertion to handle the type check
-  const typedData = data as { type?: string };
-  if (typedData.type === 'infra') {
-    // this.logger.info(`Skipping ${url}: YAML is of type 'infra'`);
-    return null;
-  }
-
-  if (!data || typeof data !== 'object') {
-    throw new Error(`Invalid YAML content in ${url}`);
-  }
-
-  // const entity = this.ensureEntityCompatibility(data, url);
-  const entity = data
-  return entity;
-}
-
-
-
-
-// Reads github url and returns all the YAML URLS 
-const discoverYamlFiles = async (target: string) => {
-  const githubToken = "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"
-  const urlParts = parseGitHubUrl(target);
-
-  console.log(urlParts)
-  if (!urlParts) {
-    throw new Error(`Invalid GitHub URL: ${target}`);
-  }
-
-  const { owner, repo, path } = urlParts;
-  let { branch } = urlParts;
-
-  branch = "main"
-  // Construct GitHub API URL
-  const apiUrl = `https://api.github.com/repos/${owner}/${repo}/git/trees/${branch}?recursive=1`;
-
-
-  try {
-    const headers: Record<string, string> = {
-      'Accept': 'application/vnd.github.v3+json',
-    };
-
-    if (githubToken) {
-      headers.Authorization = `token ${githubToken}`;
-    }
-
-    // this.logger.debug(`Fetching GitHub tree from ${apiUrl}`);
-    const response = await fetch(apiUrl, { headers });
-
-    if (!response.ok) {
-      const error = await response.text();
-      throw new Error(`GitHub API request failed: ${response.status} ${error}`);
-    }
-
-    const data = await response.json();
-
-    // Filter for YAML files
-    const yamlFiles = data.tree
-      .filter((item: { path: string; type: string }) => {
-        const itemPath = item.path;
-        if (!itemPath.startsWith(path)) {
-          return false;
-        }
-
-        return itemPath.endsWith("data.yaml");
-      })
-      .map((item: { path: string }) =>
-        `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${item.path}`
-      );
-
-    // this.logger.info(`Found ${yamlFiles.length} YAML files in ${target}`);
-    return yamlFiles;
-
-  } catch (error) {
-    // this.logger.error(`Failed to discover YAML files: ${error}`);
-    throw error;
-  }
-}
-
-// Parse github URLS from the main URL
-const parseGitHubUrl = (url: string): { owner: string; repo: string; branch: string; path: string } | null => {
-  // Handle both blob and tree URLs
-  const blobPattern = /^https?:\/\/github\.com\/([^\/]+)\/([^\/]+)\/(?:blob|tree)\/([^\/]+)(?:\/(.*))?$/;
-  const match = url.match(blobPattern);
-
-  if (!match) {
-    return null;
-  }
-
-  const [, owner, repo, branch, path = ''] = match;
-  return { owner, repo, branch, path };
-}
-
-// Define custom styles
+// Define custom styles (remains largely the same)
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
     root: {
@@ -182,14 +39,14 @@ const useStyles = makeStyles((theme: Theme) =>
       display: 'flex',
       flexDirection: 'column',
       height: '100%',
-      backgroundColor: '#374151', // Slightly lighter dark background for the card (Tailwind gray-700)
-      color: '#F3F4F6', // Tailwind gray-100 for text
+      backgroundColor: '#374151',
+      color: '#F3F4F6',
       borderRadius: theme.shape.borderRadius,
-      border: `1px solid ${theme.palette.divider}`, // Subtle border
+      border: `1px solid ${theme.palette.divider}`,
     },
     cardHeader: {
-      backgroundColor: '#10B981', // Emerald-500 (a vibrant green)
-      padding: theme.spacing(1.5, 2), // Adjusted padding
+      backgroundColor: '#10B981',
+      padding: theme.spacing(1.5, 2),
       display: 'flex',
       justifyContent: 'space-between',
       alignItems: 'center',
@@ -198,19 +55,19 @@ const useStyles = makeStyles((theme: Theme) =>
       color: '#ffffff',
     },
     cardCategory: {
-      color: '#D1D5DB', // Tailwind gray-300
-      fontSize: '0.75rem', // Smaller category text
+      color: '#D1D5DB',
+      fontSize: '0.75rem',
       marginBottom: theme.spacing(0.5),
       textTransform: 'uppercase',
     },
     cardTitle: {
       fontWeight: 'bold',
-      fontSize: '1.125rem', // Slightly larger title
+      fontSize: '1.125rem',
       color: '#ffffff',
     },
     cardDescription: {
       flexGrow: 1,
-      color: '#E5E7EB', // Tailwind gray-200
+      color: '#E5E7EB',
       fontSize: '0.875rem',
       padding: theme.spacing(2),
       paddingTop: theme.spacing(1.5),
@@ -225,33 +82,32 @@ const useStyles = makeStyles((theme: Theme) =>
     userInfo: {
       display: 'flex',
       alignItems: 'center',
-      color: '#9CA3AF', // Tailwind gray-400
+      color: '#9CA3AF',
     },
     userAvatar: {
       marginRight: theme.spacing(1),
       width: theme.spacing(3),
       height: theme.spacing(3),
-      color: '#9CA3AF', // Tailwind gray-400
+      color: '#9CA3AF',
     },
     chooseButton: {
-      backgroundColor: '#4B5563', // Tailwind gray-600
+      backgroundColor: '#4B5563',
       color: '#ffffff',
       fontWeight: 'bold',
       '&:hover': {
-        backgroundColor: '#374151', // Tailwind gray-700
+        backgroundColor: '#374151',
       },
     },
     iconButton: {
-      color: '#E5E7EB', // Tailwind gray-200
+      color: '#E5E7EB',
       '&:hover': {
         backgroundColor: 'rgba(255, 255, 255, 0.1)',
       },
     },
-    // Styles for Configuration Page
     configPageContainer: {
       padding: theme.spacing(3),
-      backgroundColor: '#2d3748', // Darker background for the page content area
-      color: '#e2e8f0', // Lighter text color
+      backgroundColor: '#2d3748',
+      color: '#e2e8f0',
       borderRadius: theme.shape.borderRadius,
     },
     configHeader: {
@@ -261,116 +117,157 @@ const useStyles = makeStyles((theme: Theme) =>
     },
     configTitle: {
       fontWeight: 'bold',
-      color: '#ffffff', // White title
+      color: '#ffffff',
     },
     configSubtitle: {
-      color: '#a0aec0', // Lighter subtitle
+      color: '#a0aec0',
       fontSize: '0.9rem',
     },
     stepper: {
-      backgroundColor: 'transparent', // Make stepper background transparent
+      backgroundColor: 'transparent',
       padding: theme.spacing(3, 0),
     },
-    stepLabel: {
-      '& .MuiStepLabel-label': {
-        color: '#cbd5e0', // Lighter label color
-        '&$active': {
-          color: '#63b3ed', // Active step color (e.g., blue)
-          fontWeight: 'bold',
+    stepLabel: { // Combined Material-UI v4 approach for StepLabel styling
+        '& .MuiStepLabel-label': {
+            color: '#cbd5e0',
+            '&$active': { // Use $active for referring to active state class
+                color: '#63b3ed',
+                fontWeight: 'bold',
+            },
+            '&$completed': { // Use $completed for referring to completed state class
+                color: '#48bb78',
+            },
         },
-        '&$completed': {
-          color: '#48bb78', // Completed step color (e.g., green)
+        '& .MuiStepIcon-root': {
+            color: '#4a5568',
+            '&$active': {
+                color: '#63b3ed',
+            },
+            '&$completed': {
+                color: '#48bb78',
+            },
         },
-      },
-      '& .MuiStepIcon-root': {
-        color: '#4a5568', // Default icon color
-        '&$active': {
-          color: '#63b3ed', // Active icon color
-        },
-        '&$completed': {
-          color: '#48bb78', // Completed icon color
-        },
-      },
-      active: {}, // Needed for MuiStepLabel-label active state
-      completed: {}, // Needed for MuiStepLabel-label completed state
+        active: {}, // Required for $active selector to work
+        completed: {}, // Required for $completed selector to work
     },
     formSection: {
       marginTop: theme.spacing(3),
       marginBottom: theme.spacing(3),
       padding: theme.spacing(2),
-      backgroundColor: '#374151', // Card-like background for form sections
+      backgroundColor: '#374151',
       borderRadius: theme.shape.borderRadius,
     },
     formField: {
       marginBottom: theme.spacing(2.5),
-      '& .MuiInputLabel-root': {
-        color: '#a0aec0', // Label color
+      '& .MuiInputLabel-root, & .MuiFormControlLabel-label': {
+        color: '#a0aec0',
       },
       '& .MuiInputBase-input': {
-        color: '#e2e8f0', // Input text color
+        color: '#e2e8f0',
       },
       '& .MuiOutlinedInput-root': {
         '& fieldset': {
-          borderColor: '#4a5568', // Border color
+          borderColor: '#4a5568',
         },
         '&:hover fieldset': {
-          borderColor: '#63b3ed', // Border color on hover
+          borderColor: '#63b3ed',
         },
         '&.Mui-focused fieldset': {
-          borderColor: '#63b3ed', // Border color when focused
+          borderColor: '#63b3ed',
         },
       },
+      '& .MuiCheckbox-root': {
+        color: '#63b3ed',
+      },
       '& .MuiFormHelperText-root': {
-        color: '#718096', // Helper text color
+        color: '#718096',
       },
     },
     configActions: {
       marginTop: theme.spacing(4),
       display: 'flex',
-      justifyContent: 'flex-end', // Align buttons to the right
-      gap: theme.spacing(2), // Spacing between buttons
+      justifyContent: 'flex-end',
+      gap: theme.spacing(2),
     },
     backButton: {
-      backgroundColor: '#4A5568', // Tailwind gray-600
+      backgroundColor: '#4A5568',
       color: '#FFFFFF',
       '&:hover': {
-        backgroundColor: '#2D3748', // Tailwind gray-800
+        backgroundColor: '#2D3748',
       },
     },
-    reviewButton: {
-      backgroundColor: '#3B82F6', // Tailwind blue-500
+    nextButton: {
+      backgroundColor: '#3B82F6',
       color: '#FFFFFF',
       '&:hover': {
-        backgroundColor: '#2563EB', // Tailwind blue-600
+        backgroundColor: '#2563EB',
       },
     },
+    createButton: {
+      backgroundColor: '#10B981',
+      color: '#FFFFFF',
+      '&:hover': {
+        backgroundColor: '#059669',
+      },
+    },
+    loadingContainer: { // Style for loading/error messages
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: '200px',
+        flexDirection: 'column',
+        color: '#e2e8f0',
+    },
+    errorText: {
+        color: theme.palette.error.main,
+        marginLeft: theme.spacing(1),
+    }
   }),
 );
 
 // --- Data Interfaces ---
+interface ConfigField {
+  id: string;
+  label: string;
+  defaultValue: string;
+  helperText: string;
+  type?: 'text' | 'select' | 'checkbox';
+  options?: string[];
+  stepGroup: number; // 0 for basic config, 1 for advanced options
+}
+
 interface TemplateData {
-  id: string; // Unique ID for the template
+  id: string;
   category: string;
   title: string;
   description: string;
   user: string;
-  // Fields specific to configuration, matching the image
-  configFields?: Array<{
-    id: string;
-    label: string;
-    defaultValue: string;
-    helperText: string;
-    type?: string; // e.g., 'text', 'select'
-    options?: string[]; // for select type
-  }>;
+  configFields?: Array<ConfigField>;
 }
 
+// --- Data Interfaces for fetched data (ADD THESE) ---
+interface AppEntity {
+  title?: string;
+  description?: string;
+  summary?: string;
+  logo?: string;
+  sourceUrl: string;
+}
+
+interface LivenessResponse {
+  status: string;
+  timestamp: string;
+  discoveredUrlCount: number;
+  processedEntities: AppEntity[];
+}
+
+
+// TemplateCardProps and TemplateCard component (NO CHANGES)
 interface TemplateCardProps {
   template: TemplateData;
   onChoose: (template: TemplateData) => void;
 }
 
-// --- Template Card Component ---
 const TemplateCard: React.FC<TemplateCardProps> = ({ template, onChoose }) => {
   const classes = useStyles();
   return (
@@ -416,38 +313,104 @@ const TemplateCard: React.FC<TemplateCardProps> = ({ template, onChoose }) => {
   );
 };
 
-// --- Configuration Page Component ---
+
+// --- Configuration Page Component (NO CHANGES NEEDED HERE FOR THIS TASK) ---
 interface ConfigurationPageProps {
   template: TemplateData;
   onBack: () => void;
-  onReview: (configValues: Record<string, string>) => void; // Callback for when review is clicked
+  onReview: (configValues: Record<string, string>) => void;
+  onCreate: (configValues: Record<string, string>) => void;
 }
 
-const ConfigurationPage: React.FC<ConfigurationPageProps> = ({ template, onBack, onReview }) => {
+const ConfigurationPage: React.FC<ConfigurationPageProps> = ({ template, onBack, onReview, onCreate }) => {
   const classes = useStyles();
-  const steps = ['Configuration and Options', 'Review']; // Stepper steps
-  const [activeStep, setActiveStep] = useState(0); // Current active step
+  const steps = ['Configuration', 'Advanced Options', 'Review'];
+  const [activeStep, setActiveStep] = useState(0);
 
-  // Initialize form values from template's default values
   const initialFormValues = template.configFields?.reduce((acc, field) => {
     acc[field.id] = field.defaultValue;
     return acc;
   }, {} as Record<string, string>) || {};
 
   const [formValues, setFormValues] = useState<Record<string, string>>(initialFormValues);
+  
+  // Reset formValues when template changes (e.g., if data loading modifies the selectedTemplate structure before this page is shown)
+  useEffect(() => {
+    setFormValues(
+        template.configFields?.reduce((acc, field) => {
+            acc[field.id] = field.defaultValue;
+            return acc;
+        }, {} as Record<string, string>) || {}
+    );
+  }, [template]);
+
 
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = event.target;
-    setFormValues(prev => ({ ...prev, [name]: value }));
+    const { name, value, type, checked } = event.target;
+    setFormValues(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? String(checked) : value,
+    }));
   };
 
-  const handleReview = () => {
-    // Here you would typically validate the formValues
-    console.log("Configuration Values:", formValues);
-    onReview(formValues); // Pass the values to the parent or next step
-    setActiveStep(1); // Move to review step (or handle actual review logic)
+  const handleNext = () => {
+    if (activeStep < steps.length - 1) {
+      setActiveStep(prevActiveStep => prevActiveStep + 1);
+      if (activeStep === steps.length - 2) {
+        onReview(formValues);
+      }
+    }
   };
 
+  const handleBackNav = () => { // Renamed to avoid conflict with onBack prop
+    if (activeStep === 0) {
+      onBack();
+    } else {
+      setActiveStep(prevActiveStep => prevActiveStep - 1);
+    }
+  };
+
+  const handleCreateSubmit = () => {
+    console.log("Final Configuration to be created:", formValues);
+    onCreate(formValues);
+  }
+
+  const renderFieldsForStep = (stepIndex: number) => {
+    return template.configFields
+      ?.filter(field => field.stepGroup === stepIndex)
+      .map(field => {
+        if (field.type === 'checkbox') {
+          return (
+            <div key={field.id} className={classes.formField}>
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={formValues[field.id] === 'true'}
+                    onChange={handleInputChange}
+                    name={field.id}
+                  />
+                }
+                label={field.label}
+              />
+              {field.helperText && <Typography variant="caption" display="block" style={{ color: '#718096', marginLeft: '32px', marginTop: '-8px' }}>{field.helperText}</Typography>}
+            </div>
+          );
+        }
+        return (
+          <TextField
+            key={field.id}
+            name={field.id}
+            label={field.label}
+            value={formValues[field.id] || ''} // Controlled component
+            variant="outlined"
+            fullWidth
+            className={classes.formField}
+            helperText={field.helperText}
+            onChange={handleInputChange}
+          />
+        );
+      });
+  };
 
   return (
     <Paper elevation={0} className={classes.configPageContainer}>
@@ -463,7 +426,10 @@ const ConfigurationPage: React.FC<ConfigurationPageProps> = ({ template, onBack,
       <Stepper activeStep={activeStep} alternativeLabel className={classes.stepper}>
         {steps.map((label) => (
           <Step key={label}>
-            <StepLabel StepIconProps={{ classes: { root: classes.stepLabel, active: classes.stepLabel, completed: classes.stepLabel } }} classes={{ label: classes.stepLabel, active: classes.stepLabel, completed: classes.stepLabel }}>
+            <StepLabel
+              StepIconProps={{ classes: { root: classes.stepLabel, active: classes.stepLabel.active, completed: classes.stepLabel.completed } }}
+              classes={{ label: classes.stepLabel }}
+            >
               {label}
             </StepLabel>
           </Step>
@@ -473,26 +439,25 @@ const ConfigurationPage: React.FC<ConfigurationPageProps> = ({ template, onBack,
       {activeStep === 0 && (
         <Box className={classes.formSection}>
           <Typography variant="h6" gutterBottom style={{ color: '#E5E7EB', marginBottom: '16px' }}>
-            Azure Cluster Configuration and Options
+            Basic Configuration Options
           </Typography>
-          {template.configFields?.map(field => (
-            <TextField
-              key={field.id}
-              name={field.id}
-              label={field.label}
-              defaultValue={field.defaultValue} // Use defaultValue for uncontrolled, or value for controlled
-              variant="outlined"
-              fullWidth
-              className={classes.formField}
-              helperText={field.helperText}
-              onChange={handleInputChange}
-            // Add select logic if field.type === 'select'
-            />
-          ))}
+          {renderFieldsForStep(0)}
         </Box>
       )}
 
       {activeStep === 1 && (
+        <Box className={classes.formSection}>
+          <Typography variant="h6" gutterBottom style={{ color: '#E5E7EB', marginBottom: '16px' }}>
+            Advanced Options
+          </Typography>
+          {renderFieldsForStep(1)}
+           {(!template.configFields?.some(f => f.stepGroup === 1)) && 
+             <Typography style={{ color: '#a0aec0' }}>No advanced options available for this template.</Typography>
+           }
+        </Box>
+      )}
+
+      {activeStep === steps.length -1 && (
         <Box className={classes.formSection}>
           <Typography variant="h6" gutterBottom style={{ color: '#E5E7EB', marginBottom: '16px' }}>
             Review Your Configuration
@@ -500,37 +465,41 @@ const ConfigurationPage: React.FC<ConfigurationPageProps> = ({ template, onBack,
           {template.configFields?.map(field => (
             <Box key={field.id} mb={2}>
               <Typography variant="subtitle2" style={{ color: '#9CA3AF' }}>{field.label}:</Typography>
-              <Typography variant="body1" style={{ color: '#F3F4F6' }}>{formValues[field.id] || field.defaultValue}</Typography>
+              <Typography variant="body1" style={{ color: '#F3F4F6' }}>
+                {field.type === 'checkbox'
+                  ? (formValues[field.id] === 'true' ? 'Yes' : 'No')
+                  : (formValues[field.id] || field.defaultValue)}
+              </Typography>
             </Box>
           ))}
-          {/* Add more review details as needed */}
         </Box>
       )}
-
 
       <Box className={classes.configActions}>
         <Button
           variant="contained"
           className={classes.backButton}
-          onClick={activeStep === 0 ? onBack : () => setActiveStep(0)} // Go back to template list or previous step
+          onClick={handleBackNav} // Use renamed handler
           startIcon={<ArrowBackIcon />}
         >
-          {activeStep === 0 ? 'Back to Templates' : 'Back to Edit'}
+          {activeStep === 0 ? 'Back to Templates' : 'Back'}
         </Button>
-        {activeStep === 0 && (
+
+        {activeStep < steps.length - 1 && (
           <Button
             variant="contained"
-            className={classes.reviewButton}
-            onClick={handleReview}
+            className={classes.nextButton}
+            onClick={handleNext}
           >
-            Review
+            Next
           </Button>
         )}
-        {activeStep === 1 && (
+
+        {activeStep === steps.length - 1 && (
           <Button
             variant="contained"
-            color="primary" // Or your theme's primary color for "Create" or "Deploy"
-          // onClick={handleCreate} // Implement create/deploy logic
+            className={classes.createButton}
+            onClick={handleCreateSubmit}
           >
             Create
           </Button>
@@ -541,6 +510,62 @@ const ConfigurationPage: React.FC<ConfigurationPageProps> = ({ template, onBack,
 };
 
 
+// --- Initial Templates Data (will be moved to state) ---
+const initialTemplatesArray: TemplateData[] = [
+  {
+    id: 'azure-cluster',
+    category: 'clusterdeployment',
+    title: 'Azure Cluster Deployment',
+    description: 'Generates a ClusterDeployment resource for Azure',
+    user: 'user:guest',
+    configFields: [
+      { id: 'clusterNameSuffix', label: 'Cluster Name Suffix', defaultValue: 'dev', helperText: 'Suffix for the cluster name (e.g., dev, prod)', type: 'text', stepGroup: 0 },
+      { id: 'controlPlaneFlavor', label: 'Control Plane Machine Flavor', defaultValue: 'Standard_DS2_v2', helperText: 'Azure VM size for control plane nodes', type: 'text', stepGroup: 0 },
+      { id: 'workerNodeFlavor', label: 'Worker Node Machine Flavor', defaultValue: 'Standard_D2_v2', helperText: 'Azure VM size for worker nodes', type: 'text', stepGroup: 0 },
+      // Original stepGroup 1 fields for 'azure-cluster' will be replaced by fetched data.
+      // You can keep them here if you want them as a fallback if API fails,
+      // or remove them if fetched data is the sole source for stepGroup 1.
+      // For this example, fetched data will replace these.
+      // {
+      //   id: 'enableMonitoring',
+      //   label: 'Enable Advanced Monitoring',
+      //   defaultValue: 'true',
+      //   helperText: 'Check to enable advanced monitoring features.',
+      //   type: 'checkbox',
+      //   stepGroup: 1,
+      // },
+      // {
+      //   id: 'useSpotInstances',
+      //   label: 'Use Spot Instances for Worker Nodes',
+      //   defaultValue: 'false',
+      //   helperText: 'Utilize cheaper spot instances if available.',
+      //   type: 'checkbox',
+      //   stepGroup: 1,
+      // },
+    ],
+  },
+  {
+    id: 'openstack-cluster',
+    category: 'clusterdeployment',
+    title: 'OpenStack Cluster Deployment',
+    description: 'Generates a ClusterDeployment resource for OpenStack',
+    user: 'user:guest',
+    configFields: [
+      { id: 'clusterName', label: 'Cluster Name', defaultValue: 'my-openstack-cluster', helperText: 'Name of the OpenStack cluster', type: 'text', stepGroup: 0 },
+      { id: 'nodeCount', label: 'Node Count', defaultValue: '3', helperText: 'Number of worker nodes', type: 'text', stepGroup: 0 },
+      {
+        id: 'floatingIpEnabled',
+        label: 'Enable Floating IP for API',
+        defaultValue: 'true',
+        helperText: 'Assign a floating IP to the Kubernetes API server.',
+        type: 'checkbox',
+        stepGroup: 1,
+      },
+    ],
+  },
+];
+
+
 // --- Main Visualizer Component ---
 type View = 'templateList' | 'configure';
 
@@ -548,74 +573,141 @@ export const Visualizer = () => {
   const classes = useStyles();
   const [currentView, setCurrentView] = useState<View>('templateList');
   const [selectedTemplate, setSelectedTemplate] = useState<TemplateData | null>(null);
-  const [configurationValues, setConfigurationValues] = useState<Record<string, string> | null>(null);
+  const [/*configurationValues*/, setConfigurationValues] = useState<Record<string, string> | null>(null);
+
+  // --- STATE FOR TEMPLATES, LOADING, AND ERRORS ---
+  const [templates, setTemplates] = useState<TemplateData[]>(initialTemplatesArray);
+  const [isLoading, setIsLoading] = useState<boolean>(true); // Start true to indicate initial load
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const checkHealth = async () => {
+    const fetchAddonsAndUpdateTemplates = async () => {
+      setIsLoading(true); // Set loading true at the start of fetch
+      setError(null); // Clear any previous errors
+
       try {
         const response = await fetch('http://localhost:7007/health/liveness');
-        
-        // Check if the response is OK
         if (!response.ok) {
-          throw new Error(`HTTP error! Status: ${response.status}`);
+          throw new Error(`API request failed: ${response.status} ${response.statusText}`);
         }
-        
-        // Parse the response as JSON
-        const data = await response.json();
-        console.log(data, "hello");
-      } catch (error) {
-        console.error("Error fetching readiness:", error);
+        const data: LivenessResponse = await response.json();
+        console.log("Liveness check response:", data);
+
+        let addonConfigFields: ConfigField[] = [];
+
+        if (data.processedEntities && data.processedEntities.length > 0) {
+          addonConfigFields = data.processedEntities.map((app, index) => ({
+            id: app.title?.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') || `addon-${app.sourceUrl.split('/').pop() || index}`,
+            label: app.title || 'Unnamed Addon',
+            defaultValue: 'false',
+            helperText: app.summary || app.description || 'No details available.',
+            type: 'checkbox',
+            stepGroup: 1,
+          }));
+        } else {
+          console.log('No addon entities received from API or the list is empty.');
+        }
+
+        setTemplates(currentTemplates =>
+          currentTemplates.map(template => {
+            if (template.id === 'azure-cluster') {
+              const step0Fields = template.configFields?.filter(
+                field => field.stepGroup === 0
+              ) || [];
+              return {
+                ...template,
+                configFields: [...step0Fields, ...addonConfigFields],
+              };
+            }
+            return template;
+          })
+        );
+
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'An unknown error occurred while fetching addons.';
+        console.error("Error fetching or processing addon data:", message);
+        setError(message);
+      } finally {
+        setIsLoading(false); // Set loading false when fetch completes or fails
       }
     };
-    
-    checkHealth();
-  }, []);
 
+    fetchAddonsAndUpdateTemplates();
+  }, []); // Empty dependency array: runs once after component mounts
 
-  const templates: TemplateData[] = [
-    {
-      id: 'azure-cluster',
-      category: 'clusterdeployment',
-      title: 'Azure Cluster Deployment',
-      description: 'Generates a ClusterDeployment resource for Azure',
-      user: 'user:guest',
-      configFields: [
-        { id: 'clusterNameSuffix', label: 'Cluster Name Suffix', defaultValue: 'dev', helperText: 'Suffix for the cluster name (e.g., dev, prod)' },
-        { id: 'controlPlaneFlavor', label: 'Control Plane Machine Flavor', defaultValue: 'Standard_DS2_v2', helperText: 'Azure VM size for control plane nodes (e.g., Standard_DS2_v2)' },
-        { id: 'workerNodeFlavor', label: 'Worker Node Machine Flavor', defaultValue: 'Standard_D2_v2', helperText: 'Azure VM size for worker nodes (e.g., Standard_D2_v2)' },
-      ],
-    },
-    {
-      id: 'openstack-cluster',
-      category: 'clusterdeployment',
-      title: 'OpenStack Cluster Deployment',
-      description: 'Generates a ClusterDeployment resource for OpenStack',
-      user: 'user:guest',
-      configFields: [ // Example fields for OpenStack
-        { id: 'clusterName', label: 'Cluster Name', defaultValue: 'my-openstack-cluster', helperText: 'Name of the OpenStack cluster' },
-        { id: 'nodeCount', label: 'Node Count', defaultValue: '3', helperText: 'Number of worker nodes' },
-      ],
-    },
-  ];
 
   const handleChooseTemplate = (template: TemplateData) => {
-    setSelectedTemplate(template);
+    // Ensure we are using the latest version of the template from the state
+    const currentTemplateData = templates.find(t => t.id === template.id) || template;
+    setSelectedTemplate(currentTemplateData);
     setCurrentView('configure');
   };
 
   const handleBackToTemplates = () => {
     setSelectedTemplate(null);
     setCurrentView('templateList');
-    setConfigurationValues(null); // Clear config values when going back
+    setConfigurationValues(null);
   };
 
-  const handleReviewConfig = (configVals: Record<string, string>) => {
-    console.log("Final Configuration to be submitted:", configVals);
+  const handleFinalReview = (configVals: Record<string, string>) => {
+    console.log("Configuration ready for review:", configVals);
     setConfigurationValues(configVals);
-    // Potentially navigate to a final summary or trigger an action
-    // For now, the ConfigurationPage handles its own "Review" step display
   };
 
+  const handleCreateAction = (configVals: Record<string, string>) => {
+    console.log("CREATE button clicked. Final Configuration to be submitted:", configVals);
+    setConfigurationValues(configVals);
+    alert(`Resource creation initiated with: ${JSON.stringify(configVals, null, 2)}`);
+  };
+
+  // --- UI RENDERING WITH LOADING/ERROR STATES ---
+  if (isLoading) {
+    return (
+      <Page themeId="tool">
+        <Header title="Loading Templates..." />
+        <Content>
+          <Box className={classes.loadingContainer}>
+            <Progress /> {/* Backstage Progress component */}
+            <Typography style={{ marginTop: '16px' }}>Fetching latest configurations...</Typography>
+          </Box>
+        </Content>
+      </Page>
+    );
+  }
+
+  if (error) {
+    return (
+      <Page themeId="tool">
+        <Header title="Error" subtitle="Failed to load template configurations" />
+        <Content>
+          <Box className={classes.loadingContainer}>
+            <ErrorIcon style={{ fontSize: 48, color: 'red' }}/>
+            <Typography variant="h6" style={{ marginTop: '16px', color: 'red' }}>
+              Oops! Something went wrong.
+            </Typography>
+            <Typography style={{ color: '#ffcccb' }}>{error}</Typography>
+            <Button
+                variant="contained"
+                color="primary"
+                style={{ marginTop: '20px' }}
+                onClick={() => { // Basic retry, re-triggers useEffect if component re-mounts or key changes
+                    setIsLoading(true);
+                    setError(null);
+                    // For a true retry, you might need to extract the fetch logic
+                    // into a function that can be called again, or change a dependency in useEffect.
+                    // This simplistic retry relies on potentially re-triggering the initial fetch.
+                    // A better way is to have a dedicated refetch function.
+                    // For now, we'll just reset state to allow manual refresh or re-navigation.
+                    window.location.reload(); // Simplest form of "retry" for this example
+                }}
+            >
+                Try Again
+            </Button>
+          </Box>
+        </Content>
+      </Page>
+    );
+  }
 
   return (
     <Page themeId="tool">
@@ -630,7 +722,7 @@ export const Visualizer = () => {
               Templates
             </Typography>
             <Grid container spacing={3} className={classes.root}>
-              {templates.map((template) => (
+              {templates.map((template) => ( // Use 'templates' from state
                 <Grid item xs={12} sm={6} md={4} key={template.id}>
                   <TemplateCard
                     template={template}
@@ -646,7 +738,8 @@ export const Visualizer = () => {
           <ConfigurationPage
             template={selectedTemplate}
             onBack={handleBackToTemplates}
-            onReview={handleReviewConfig}
+            onReview={handleFinalReview}
+            onCreate={handleCreateAction}
           />
         )}
       </Content>
