@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Grid,
   Card,
@@ -12,7 +12,6 @@ import {
   Step,
   StepLabel,
   Paper,
-  Divider,
 } from '@material-ui/core';
 import { makeStyles, createStyles, Theme } from '@material-ui/core/styles';
 import { Content, Header, Page } from '@backstage/core-components';
@@ -20,6 +19,154 @@ import FilterListIcon from '@material-ui/icons/FilterList';
 import StarBorderIcon from '@material-ui/icons/StarBorder';
 import AccountCircleIcon from '@material-ui/icons/AccountCircle';
 import ArrowBackIcon from '@material-ui/icons/ArrowBack';
+import * as yaml from 'js-yaml';
+
+const readLocation = async () => {
+  const target = "https://github.com/k0rdent/catalog/blob/main/apps"
+
+  try {
+    const urls = await discoverYamlFiles(target);
+    // this.logger.info(`Found ${urls.length} YAML files to process`);
+    console.log(urls)
+    for (const url of urls) {
+      // this.logger.info(`Processing file: ${url}`);
+
+      // Process the actual YAML instead of using a hardcoded entity
+      const entity = await fetchAndProcessYaml(url);
+      console.log(entity)
+
+      // Only emit if we got a valid entity back (not null)
+      // if (entity) {
+      //   this.logger.info(`Emitting entity: ${entity.metadata.name}`);
+      //   // emit(processingResult.entity(location, entity));
+      // } else {
+      //   this.logger.info(`Skipping entity from ${url} (returned null)`);
+      // }
+    }
+    return true;
+  } catch (errro: any) {
+    // console.log(`Failed to read location ${location.target}, ${error}`)
+    return false;
+  }
+  // throw error;
+}
+
+const fetchAndProcessYaml = async (url: string) => {
+  const githubToken = "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"
+  const headers: Record<string, string> = {};
+  if (githubToken) {
+    headers.Authorization = `token ${githubToken}`;
+  }
+  // this.logger.debug(`Fetching YAML from ${url}`);
+  const response = await fetch(url, { headers });
+  if (!response.ok) {
+    throw new Error(`Failed to fetch ${url}: ${response.status} ${response.statusText}`);
+  }
+  const text = await response.text();
+  let data;
+  try {
+    data = yaml.load(text);
+    if (!data || typeof data !== 'object') {
+      // this.logger.warn(`Skipping ${url}: YAML content is invalid`);
+      return null;
+    }
+  } catch (error) {
+    // this.logger.warn(`Skipping ${url}: YAML parsing failed - ${error}`);
+    return null;
+  }
+
+  // Type assertion to handle the type check
+  const typedData = data as { type?: string };
+  if (typedData.type === 'infra') {
+    // this.logger.info(`Skipping ${url}: YAML is of type 'infra'`);
+    return null;
+  }
+
+  if (!data || typeof data !== 'object') {
+    throw new Error(`Invalid YAML content in ${url}`);
+  }
+
+  // const entity = this.ensureEntityCompatibility(data, url);
+  const entity = data
+  return entity;
+}
+
+
+
+
+// Reads github url and returns all the YAML URLS 
+const discoverYamlFiles = async (target: string) => {
+  const githubToken = "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"
+  const urlParts = parseGitHubUrl(target);
+
+  console.log(urlParts)
+  if (!urlParts) {
+    throw new Error(`Invalid GitHub URL: ${target}`);
+  }
+
+  const { owner, repo, path } = urlParts;
+  let { branch } = urlParts;
+
+  branch = "main"
+  // Construct GitHub API URL
+  const apiUrl = `https://api.github.com/repos/${owner}/${repo}/git/trees/${branch}?recursive=1`;
+
+
+  try {
+    const headers: Record<string, string> = {
+      'Accept': 'application/vnd.github.v3+json',
+    };
+
+    if (githubToken) {
+      headers.Authorization = `token ${githubToken}`;
+    }
+
+    // this.logger.debug(`Fetching GitHub tree from ${apiUrl}`);
+    const response = await fetch(apiUrl, { headers });
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`GitHub API request failed: ${response.status} ${error}`);
+    }
+
+    const data = await response.json();
+
+    // Filter for YAML files
+    const yamlFiles = data.tree
+      .filter((item: { path: string; type: string }) => {
+        const itemPath = item.path;
+        if (!itemPath.startsWith(path)) {
+          return false;
+        }
+
+        return itemPath.endsWith("data.yaml");
+      })
+      .map((item: { path: string }) =>
+        `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${item.path}`
+      );
+
+    // this.logger.info(`Found ${yamlFiles.length} YAML files in ${target}`);
+    return yamlFiles;
+
+  } catch (error) {
+    // this.logger.error(`Failed to discover YAML files: ${error}`);
+    throw error;
+  }
+}
+
+// Parse github URLS from the main URL
+const parseGitHubUrl = (url: string): { owner: string; repo: string; branch: string; path: string } | null => {
+  // Handle both blob and tree URLs
+  const blobPattern = /^https?:\/\/github\.com\/([^\/]+)\/([^\/]+)\/(?:blob|tree)\/([^\/]+)(?:\/(.*))?$/;
+  const match = url.match(blobPattern);
+
+  if (!match) {
+    return null;
+  }
+
+  const [, owner, repo, branch, path = ''] = match;
+  return { owner, repo, branch, path };
+}
 
 // Define custom styles
 const useStyles = makeStyles((theme: Theme) =>
@@ -184,18 +331,18 @@ const useStyles = makeStyles((theme: Theme) =>
       gap: theme.spacing(2), // Spacing between buttons
     },
     backButton: {
-        backgroundColor: '#4A5568', // Tailwind gray-600
-        color: '#FFFFFF',
-        '&:hover': {
-            backgroundColor: '#2D3748', // Tailwind gray-800
-        },
+      backgroundColor: '#4A5568', // Tailwind gray-600
+      color: '#FFFFFF',
+      '&:hover': {
+        backgroundColor: '#2D3748', // Tailwind gray-800
+      },
     },
     reviewButton: {
-        backgroundColor: '#3B82F6', // Tailwind blue-500
-        color: '#FFFFFF',
-        '&:hover': {
-            backgroundColor: '#2563EB', // Tailwind blue-600
-        },
+      backgroundColor: '#3B82F6', // Tailwind blue-500
+      color: '#FFFFFF',
+      '&:hover': {
+        backgroundColor: '#2563EB', // Tailwind blue-600
+      },
     },
   }),
 );
@@ -339,24 +486,24 @@ const ConfigurationPage: React.FC<ConfigurationPageProps> = ({ template, onBack,
               className={classes.formField}
               helperText={field.helperText}
               onChange={handleInputChange}
-              // Add select logic if field.type === 'select'
+            // Add select logic if field.type === 'select'
             />
           ))}
         </Box>
       )}
 
       {activeStep === 1 && (
-         <Box className={classes.formSection}>
-            <Typography variant="h6" gutterBottom style={{ color: '#E5E7EB', marginBottom: '16px' }}>
-                Review Your Configuration
-            </Typography>
-            {template.configFields?.map(field => (
-                <Box key={field.id} mb={2}>
-                    <Typography variant="subtitle2" style={{color: '#9CA3AF'}}>{field.label}:</Typography>
-                    <Typography variant="body1" style={{color: '#F3F4F6'}}>{formValues[field.id] || field.defaultValue}</Typography>
-                </Box>
-            ))}
-            {/* Add more review details as needed */}
+        <Box className={classes.formSection}>
+          <Typography variant="h6" gutterBottom style={{ color: '#E5E7EB', marginBottom: '16px' }}>
+            Review Your Configuration
+          </Typography>
+          {template.configFields?.map(field => (
+            <Box key={field.id} mb={2}>
+              <Typography variant="subtitle2" style={{ color: '#9CA3AF' }}>{field.label}:</Typography>
+              <Typography variant="body1" style={{ color: '#F3F4F6' }}>{formValues[field.id] || field.defaultValue}</Typography>
+            </Box>
+          ))}
+          {/* Add more review details as needed */}
         </Box>
       )}
 
@@ -371,22 +518,22 @@ const ConfigurationPage: React.FC<ConfigurationPageProps> = ({ template, onBack,
           {activeStep === 0 ? 'Back to Templates' : 'Back to Edit'}
         </Button>
         {activeStep === 0 && (
-            <Button
+          <Button
             variant="contained"
             className={classes.reviewButton}
             onClick={handleReview}
-            >
+          >
             Review
-            </Button>
+          </Button>
         )}
         {activeStep === 1 && (
-             <Button
-             variant="contained"
-             color="primary" // Or your theme's primary color for "Create" or "Deploy"
-             // onClick={handleCreate} // Implement create/deploy logic
-           >
-             Create
-           </Button>
+          <Button
+            variant="contained"
+            color="primary" // Or your theme's primary color for "Create" or "Deploy"
+          // onClick={handleCreate} // Implement create/deploy logic
+          >
+            Create
+          </Button>
         )}
       </Box>
     </Paper>
@@ -402,6 +549,27 @@ export const Visualizer = () => {
   const [currentView, setCurrentView] = useState<View>('templateList');
   const [selectedTemplate, setSelectedTemplate] = useState<TemplateData | null>(null);
   const [configurationValues, setConfigurationValues] = useState<Record<string, string> | null>(null);
+
+  useEffect(() => {
+    const checkHealth = async () => {
+      try {
+        const response = await fetch('http://localhost:7007/health/liveness');
+        
+        // Check if the response is OK
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        
+        // Parse the response as JSON
+        const data = await response.json();
+        console.log(data, "hello");
+      } catch (error) {
+        console.error("Error fetching readiness:", error);
+      }
+    };
+    
+    checkHealth();
+  }, []);
 
 
   const templates: TemplateData[] = [

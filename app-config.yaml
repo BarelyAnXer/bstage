@@ -122,3 +122,11 @@ catalog:
 permission:
   # setting this to `false` will disable permissions
   enabled: true
+
+# proxy:
+#   '/health':
+#     target: http://localhost:7007
+#     changeOrigin: true
+#     # The following line ensures the path is properly preserved
+#     pathRewrite:
+#       '^/health': '/health'
