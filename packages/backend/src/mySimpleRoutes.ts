@@ -1,21 +1,46 @@
 import { coreServices, createBackendPlugin } from '@backstage/backend-plugin-api';
 import { Router } from 'express';
 import * as yaml from 'js-yaml';
+import express from 'express';
+
+interface CreateResourcePayload {
+  templateId: string;
+  templateApiVersion: string;
+  templateKind: string;
+  configuration: Record<string, any>;
+  addons: Record<string, boolean>;
+}
+
+interface AppEntity {
+  title?: string;
+  description?: string;
+  summary?: string;
+  logo?: string;
+  sourceUrl: string;
+  install_code?: string;
+}
+
+let serviceInstallMap: { [key: string]: string | undefined } = {};
 
 export const healthPlugin = createBackendPlugin({
   pluginId: 'health',
   register(env) {
     env.registerInit({
-      deps: { rootHttpRouter: coreServices.rootHttpRouter },
-      async init({ rootHttpRouter }) {
+      deps: { rootHttpRouter: coreServices.rootHttpRouter, logger: coreServices.logger, },
+      async init({ rootHttpRouter, logger }) {
         const router = Router();
-         
+
+
+        router.use(express.json());
+
+
+        // for reading the catalog or chart data in k0rdnet catalog/apps
         router.get('/liveness', async (request, response) => {
 
           const target = "https://github.com/k0rdent/catalog/blob/main/apps"
 
           try {
-            const urls = await discoverYamlFiles(target); 
+            const urls = await discoverYamlFiles(target);
             const processedEntities: AppEntity[] = [];
 
             for (const url of urls) {
@@ -34,32 +59,179 @@ export const healthPlugin = createBackendPlugin({
               }
             }
 
+            console.log("christian", serviceInstallMap)
 
             response.json({
               status: 'OK',
               timestamp: new Date().toISOString(),
               discoveredUrlCount: urls.length,
               processedEntities: processedEntities, // Array of app entities
+
             });
-          } catch (errro: any) {
+          } catch (error: any) {
             // console.log(`Failed to read location ${location.target}, ${error}`)
             // return false;
-          } 
+          }
         });
-        
+
+        router.post('/create-resource', async (request, response) => {
+          logger.info('Received request to /create-resource');
+          const payload = request.body as CreateResourcePayload;
+          // logger.info('Payload received:', { payload }); // Log the entire payload
+
+          // Basic Validation
+          if (!payload || typeof payload !== 'object') {
+            logger.warn('Invalid payload: not an object or empty.');
+            return response.status(400).json({ message: 'Invalid payload: must be a JSON object.' });
+          }
+
+          const { templateId, templateApiVersion, templateKind, configuration, addons } = payload;
+          if (!templateId || !templateApiVersion || !templateKind || !configuration) {
+            logger.warn('Missing required fields in payload.', {
+              templateIdExists: !!templateId,
+              apiVersionExists: !!templateApiVersion,
+              kindExists: !!templateKind,
+              configExists: !!configuration,
+            });
+            return response.status(400).json({ message: 'Missing required fields: templateId, templateApiVersion, templateKind, configuration are required.' });
+          }
+
+          try {
+            const generatedResource: any = {
+              apiVersion: templateApiVersion,
+              kind: templateKind,
+              metadata: {
+                name: configuration.clusterName || configuration.clusterNameSuffix || `${templateId}-generated-${Date.now()}`,
+                labels: {
+                  'app.kubernetes.io/managed-by': 'visualizer-tool',
+                  'template-id': templateId,
+                },
+                // You might want to add namespace or other metadata from configuration
+              },
+              spec: {
+                ...configuration, // Spread the main configuration properties
+              },
+            };
+
+
+            const yamlString = yaml.dump(generatedResource, { indent: 2 });
+
+            // Install the helm chart in the kind cluster
+            logger.info(`Installing ArangoDB Helm chart for template: ${templateId}`);
+
+            // Execute helm install command using child_process
+            const { exec } = require('child_process');
+
+            const helmInstallCommands: { command: string; name: string }[] = [];
+            // helmInstallCommands.push({
+            //   command: 'helm install kube-arangodb oci://ghcr.io/k0rdent/catalog/charts/kube-arangodb-service-template',
+            //   name: 'kube-arangodb-service-template'
+            // });
+
+            if (addons && typeof addons === 'object') {
+              for (const addonKey in addons) {
+                if (addons[addonKey] === true) {
+                  const installCommand = serviceInstallMap[addonKey.toLocaleLowerCase()];
+                  if (installCommand) {
+                    helmInstallCommands.push({ command: installCommand, name: addonKey });
+                    logger.info(`Added Helm install command for addon: ${addonKey}`);
+                  } else {
+                    logger.warn(`No install command found in serviceInstallMap for enabled addon: ${addonKey}`);
+                  }
+                }
+              }
+            }
+            console.log(serviceInstallMap, "zxc")
+            console.log(helmInstallCommands, "asd")
+
+
+            const installedCharts: string[] = [];
+            const installationErrors: { name: string; error: string; stdout?: string; stderr?: string }[] = [];
+
+            for (const { command, name } of helmInstallCommands) {
+              logger.info(`Executing Helm command: ${command} (for ${name})`);
+              try {
+                await new Promise<void>((resolve, reject) => {
+                  exec(command, (error: Error | null, stdout: string, stderr: string) => {
+                    if (error) {
+                      logger.error(`Error installing Helm chart '${name}': ${error.message}`, {
+                        stdout,
+                        stderr,
+                        command,
+                      });
+                      installationErrors.push({ name, error: error.message, stdout, stderr });
+                      reject(error); // Reject the promise for this specific command
+                      return;
+                    }
+
+                    logger.info(`Helm chart '${name}' installed successfully`, {
+                      output: stdout,
+                    });
+
+                    if (stderr) {
+                      logger.warn(`Helm installation for '${name}' produced warnings`, {
+                        stderr,
+                      });
+                    }
+                    installedCharts.push(name);
+                    resolve();
+                  });
+                });
+              } catch (execError) {
+                // This catch block will catch the rejection from the promise if a command fails.
+                // We've already logged the specific error, so we can break or decide how to proceed.
+                // For this implementation, we'll stop further installations if one fails.
+                logger.error(`Halting further installations due to error with chart '${name}'.`);
+                break;
+              }
+            }
+
+            if (installationErrors.length > 0) {
+              // If there were any errors, report them
+              const failedChartNames = installationErrors.map(e => e.name).join(', ');
+              logger.error(`One or more Helm chart installations failed: ${failedChartNames}`);
+              return response.status(500).json({
+                message: `Failed to install some Helm charts: ${failedChartNames}.`,
+                templateId: templateId,
+                kind: templateKind,
+                generatedYaml: yamlString, // Still provide YAML if generated
+                helmInstalled: false,
+                installedCharts,
+                installationErrors,
+              });
+            }
+
+            logger.info(`Successfully generated YAML and installed Helm chart for template: ${templateId}`);
+
+            // Respond to the frontend
+            response.status(201).json({
+              message: `Resource configuration for '${templateKind}' received and all charts deployed successfully.`,
+              templateId: templateId,
+              kind: templateKind,
+              generatedYaml: yamlString,
+              helmInstalled: true,
+              installedCharts,
+          });
+          } catch (error: any) {
+            logger.error(`Error processing /create-resource payload: ${error.message}`, {
+              // payload,
+              stack: error.stack,
+            });
+            response.status(500).json({
+              message: 'An error occurred while processing your request.',
+              error: error.message,
+            });
+          }
+        });
+
+
         rootHttpRouter.use('/health', router);
       },
     });
   },
 });
 
-interface AppEntity {
-  title?: string;
-  description?: string;
-  summary?: string;
-  logo?: string;
-  sourceUrl: string;
-}
+
 
 const fetchAndProcessYaml = async (url: string): Promise<AppEntity | null> => {
   const githubToken = "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"; // WARNING: Hardcoded token
@@ -103,20 +275,53 @@ const fetchAndProcessYaml = async (url: string): Promise<AppEntity | null> => {
     return null; // Skip 'infra' type entities
   }
 
+  if (data.title as string == "Pure") {
+    console.info(`Skipddping ${url}: YAML is of type 'infra'.`);
+    return null;
+  }
+
+  const extractHelmInstallCommands = (installCode: string | undefined): string | undefined => {
+    if (typeof installCode !== 'string') {
+      return undefined;
+    }
+
+    // Remove code block markers if present
+    let cleanedCode = installCode.replace(/^~~~bash\n/, '').replace(/\n~~~$/, '');
+
+    // Remove trailing backslashes used for line continuation
+    cleanedCode = cleanedCode.replace(/\s*\\\s*$/gm, ' ');
+
+    // Split into lines and filter for helm install commands
+    const helmCommandLines = cleanedCode
+      .split('\n')
+      .filter(line => line.trim().startsWith('helm install'));
+
+    // Join commands together with proper spacing
+    const helmCommands = helmCommandLines.join('\n');
+
+    return helmCommands.trim() === '' ? undefined : helmCommands;
+  };
+
   // If type is not 'infra' or type field is missing, treat as an "app"
   // and extract specified fields.
+  
+  serviceInstallMap[(data.title as string).toLowerCase()] = extractHelmInstallCommands(data.install_code);
+
+  
   const appEntity: AppEntity = {
     title: typeof data.title === 'string' ? data.title : undefined,
     description: typeof data.description === 'string' ? data.description : undefined,
     summary: typeof data.summary === 'string' ? data.summary : undefined,
     logo: typeof data.logo === 'string' ? data.logo : undefined,
     sourceUrl: url,
+    install_code: extractHelmInstallCommands(data.install_code),
   };
 
-  console.log(`Processed app entity from ${url}:`, appEntity);
+  // console.log(`Processed app entity from ${url}:`, appEntity);
+
+  console.log(`Processed app entity from ${url}:`);
   return appEntity;
 };
-
 
 // Reads github url and returns all the YAML URLS 
 const discoverYamlFiles = async (target: string) => {
