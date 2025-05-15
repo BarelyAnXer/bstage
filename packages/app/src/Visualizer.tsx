@@ -586,7 +586,7 @@ const initialTemplatesArray: TemplateData[] = [
     description: 'Deploys a Cluster resource for OpenStack using backend processing.',
     user: 'user:guest',
     yamlKind: 'ClusterDeployment',
-    yamlApiVersion: 'hive.openshift.io/v1alpha1',
+    yamlApiVersion: 'hive.openshift.io/v1alpha1', // Example, adjust as needed
     configFields: [
       { id: 'clusterName', label: 'Cluster Name', defaultValue: 'my-openstack-cluster', helperText: 'Name of the OpenStack cluster', type: 'text', stepGroup: 0 },
       { id: 'nodeCount', label: 'Node Count', defaultValue: '3', helperText: 'Number of worker nodes', type: 'number', stepGroup: 0 },
@@ -600,13 +600,39 @@ const initialTemplatesArray: TemplateData[] = [
       },
     ],
   },
+  // --- NEW AWS K0RDENT CLUSTER TEMPLATE ---
+  {
+    id: 'aws-k0rdent-cluster',
+    category: 'clusterdeployment',
+    title: 'AWS k0rdent Cluster Deployment',
+    description: 'Deploys a k0rdent.mirantis.com/v1alpha1 ClusterDeployment for AWS.',
+    user: 'user:guest',
+    yamlKind: 'ClusterDeployment',
+    yamlApiVersion: 'k0rdent.mirantis.com/v1alpha1',
+    configFields: [
+      // Metadata fields
+      { id: 'metadataName', label: 'ClusterDeployment Name', defaultValue: 'my-aws-clusterdeployment1', helperText: 'Name of the ClusterDeployment resource (metadata.name)', type: 'text', stepGroup: 0 },
+      { id: 'metadataNamespace', label: 'Namespace', defaultValue: 'kcm-system', helperText: 'Namespace for the ClusterDeployment (metadata.namespace)', type: 'text', stepGroup: 0 },
+      // Spec fields
+      { id: 'specTemplate', label: 'Specification Template Name', defaultValue: 'aws-standalone-cp-0-2-0', helperText: 'Name of the template to use (spec.template)', type: 'text', stepGroup: 0 },
+      { id: 'specCredential', label: 'Credential Name', defaultValue: 'aws-cluster-identity-cred', helperText: 'Credential to use for the cluster (spec.credential)', type: 'text', stepGroup: 0 },
+      // Spec.config fields
+      { id: 'specConfigRegion', label: 'AWS Region', defaultValue: 'us-east-2', helperText: 'AWS region for the cluster deployment (spec.config.region)', type: 'text', stepGroup: 0 },
+      { id: 'specConfigControlPlaneInstanceType', label: 'Control Plane Instance Type', defaultValue: 't3.small', helperText: 'EC2 instance type for control plane nodes (spec.config.controlPlane.instanceType)', type: 'text', stepGroup: 0 },
+      { id: 'specConfigWorkerInstanceType', label: 'Worker Node Instance Type', defaultValue: 't3.small', helperText: 'EC2 instance type for worker nodes (spec.config.worker.instanceType)', type: 'text', stepGroup: 0 },
+      // Note: spec.config.clusterLabels is an empty object in the example YAML.
+      // If it needs to be configurable, you could add a field like:
+      // { id: 'specConfigClusterLabels', label: 'Cluster Labels (JSON string)', defaultValue: '{}', helperText: 'e.g., {"key": "value"}', type: 'text', stepGroup: 1 },
+      // The backend would then need to parse this JSON string. For now, assuming it's defaulted to {} by the backend if not provided.
+    ],
+  },
 ];
 
 
 // --- Main Visualizer Component ---
 type View = 'templateList' | 'configure';
 
-const BACKEND_API_ENDPOINT = 'http://localhost:7007/health/create-resource'; 
+const BACKEND_API_ENDPOINT = 'http://localhost:7007/health/create-resource';
 
 export const Visualizer = () => {
   const classes = useStyles();
@@ -649,17 +675,21 @@ export const Visualizer = () => {
             defaultValue: 'false',
             helperText: app.summary || app.description || `Enable or disable the ${app.title || 'addon'}.`,
             type: 'checkbox',
-            stepGroup: 1,
+            stepGroup: 1, // Addons are typically in the "Advanced Options" step
           }));
         } else {
           console.log('No addon entities received from API or the list is empty.');
         }
 
+        // Merge addons into existing templates - this logic might need adjustment
+        // depending on how addons should be associated with specific templates.
+        // For now, it adds fetched addons to the 'azure-cluster' template as an example.
         setTemplates(currentTemplates =>
           currentTemplates.map(template => {
-            if (template.id === 'azure-cluster') { // Example: Only add these addons to the 'azure-cluster' template
+            // Example: Only add these addons to specific templates like 'azure-cluster' or all templates
+            if (template.id === 'azure-cluster' || template.id === 'aws-k0rdent-cluster') { // Decide which templates get these addons
               const baseConfigFields = template.configFields?.filter(
-                field => !addonConfigFields.some(addon => addon.id === field.id)
+                field => !addonConfigFields.some(addon => addon.id === field.id) // Avoid duplicates
               ) || [];
               return {
                 ...template,
@@ -727,20 +757,27 @@ export const Visualizer = () => {
 
     selectedTemplate.configFields?.forEach(field => {
       const value = configVals[field.id];
-      if (value === undefined) return;
+      if (value === undefined) return; // Should not happen if formValues are initialized correctly
 
       let processedValue: any = value;
       if (field.type === 'checkbox') {
         processedValue = value === 'true';
       } else if (field.type === 'number') {
         const num = parseFloat(value);
-        processedValue = isNaN(num) ? value : num;
+        processedValue = isNaN(num) ? value : num; // Keep as string if not a valid number, or let backend validate
       }
 
-      if (field.stepGroup === 1 && field.type === 'checkbox') { // Assuming stepGroup 1 checkboxes are addons
+      // Check if the field ID suggests it's an addon (e.g., fetched from liveness and marked as stepGroup 1)
+      // This assumes addon fields are specifically identifiable or all stepGroup 1 checkboxes are addons.
+      const isPotentiallyAddon = field.id.startsWith('addon-') || (field.label && field.label.includes('(Add-on)'));
+
+      if (field.stepGroup === 1 && field.type === 'checkbox' && isPotentiallyAddon) {
         if (processedValue === true) { // Only include enabled addons
-           // Use a cleaned ID for the addon key if necessary, or the raw ID
-          addons[field.id.replace(/-addon$/, '').replace(/[^a-zA-Z0-9-_]/g, '')] = true;
+           // Clean up addon ID for the key if necessary, or use the raw field.id
+           // This part depends on how the backend expects addon keys.
+           // Using a simple approach for now:
+           const addonKey = field.id.replace(/^addon-/i, '').replace(/\s+/g, '-').toLowerCase();
+          addons[addonKey] = true;
         }
       } else {
         processedConfig[field.id] = processedValue;
@@ -749,10 +786,10 @@ export const Visualizer = () => {
 
     const payload = {
       templateId: selectedTemplate.id,
-      templateApiVersion: selectedTemplate.yamlApiVersion || 'v1',
-      templateKind: selectedTemplate.yamlKind || 'CustomResource',
-      configuration: processedConfig,
-      addons: addons, // Addons are now separated
+      templateApiVersion: selectedTemplate.yamlApiVersion || 'v1', // Default if not specified
+      templateKind: selectedTemplate.yamlKind || 'CustomResource', // Default if not specified
+      configuration: processedConfig, // This will contain keys like 'metadataName', 'specConfigRegion' etc.
+      addons: addons,
     };
 
     console.log("Payload to send to backend:", JSON.stringify(payload, null, 2));
@@ -774,13 +811,9 @@ export const Visualizer = () => {
         throw new Error(errorMsg);
       }
 
-      // Assuming backend returns a success message, possibly with the created resource details or YAML
       console.log('Backend submission successful:', responseData);
       setSubmitSuccessMessage(responseData.message || 'Configuration submitted successfully!');
-      // Optionally, you could navigate away or reset the form here.
-      // For now, we just show the success message.
-      // If backend returns YAML and you want to display it:
-      // if (responseData.yaml) { setGeneratedYamlForDisplay(responseData.yaml); }
+      // Example: if (responseData.yaml) { setGeneratedYamlForDisplay(responseData.yaml); }
 
     } catch (e) {
       const message = e instanceof Error ? e.message : 'An unknown error occurred during submission.';
@@ -823,15 +856,8 @@ export const Visualizer = () => {
               color="primary"
               style={{ marginTop: '20px' }}
               onClick={() => {
-                // More robust retry: re-call the fetching logic.
-                // This requires fetchAddonsAndUpdateTemplates to be callable or part of a state update trigger.
-                // For this example, a reload is simpler if the effect is set up correctly.
+                // A simple way to retry is to reload the page, triggering the useEffect again.
                 window.location.reload();
-
-                // Alternatively, if fetchAddonsAndUpdateTemplates were defined outside or memoized:
-                // setIsLoading(true);
-                // setError(null);
-                // fetchAddonsAndUpdateTemplates();
               }}
             >
               Try Again
