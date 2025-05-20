@@ -37,6 +37,7 @@ import { RequirePermission } from '@backstage/plugin-permission-react';
 import { catalogEntityCreatePermission } from '@backstage/plugin-catalog-common/alpha';
 import { Visualizer } from './Visualizer';
 import { OpenCostPage } from '@backstage-community/plugin-opencost';
+import CAPIVisualizer from './CAPIVisualizer';
 
 const app = createApp({
   apis,
@@ -98,6 +99,7 @@ const routes = (
     <Route path="/catalog-graph" element={<CatalogGraphPage />} />
     <Route path="/visualizer" element={<Visualizer />} />
     <Route path="/opencost" element={<OpenCostPage />} />
+    <Route path="/capi-visualizer" element={<CAPIVisualizer />} />
   </FlatRoutes>
 );
 

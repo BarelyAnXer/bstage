@@ -871,8 +871,8 @@ export const Visualizer = () => {
   return (
     <Page themeId="tool">
       <Header
-        title={currentView === 'templateList' ? "My Awesome Templates" : selectedTemplate?.title || "Configure Template"}
-        subtitle={currentView === 'templateList' ? "Browse and choose your deployment templates" : selectedTemplate?.description || "Set your options"}
+        title={currentView === 'templateList' ? "K0rdent Tempaltes" : selectedTemplate?.title || "Configure Template"}
+        subtitle={currentView === 'templateList' ? "Browse and choose your templates" : selectedTemplate?.description || "Set your options"}
       />
       <Content>
         {currentView === 'templateList' && (
