@@ -2,6 +2,10 @@ import { coreServices, createBackendPlugin } from '@backstage/backend-plugin-api
 import { Router } from 'express';
 import * as yaml from 'js-yaml';
 import express from 'express';
+import { promisify } from 'util';
+import { exec } from 'child_process';
+import * as fs from 'fs';
+import * as path from 'path';
 
 interface CreateResourcePayload {
   templateId: string;
@@ -18,9 +22,53 @@ interface AppEntity {
   logo?: string;
   sourceUrl: string;
   install_code?: string;
+  serviceTemplateName: string | undefined;
 }
 
 let serviceInstallMap: { [key: string]: string | undefined } = {};
+let serviceData: {
+  [key: string]: {
+    template?: string;
+    name?: string;
+    namespace?: string;
+  };
+} = {}
+
+const execAsync = promisify(exec);
+
+async function runCommand(command: string): Promise<{ stdout: string; stderr: string }> {
+  console.log(`Executing: ${command}`);
+  try {
+    const { stdout, stderr } = await execAsync(command);
+    console.log(`stdout: ${stdout}`);
+    if (stderr) console.warn(`stderr: ${stderr}`);
+    return { stdout, stderr };
+  } catch (error: any) {
+    console.error(`Command failed: ${error.message}`);
+    throw error;
+  }
+}
+
+async function applyYamlFile(filePath: string): Promise<void> {
+  const kubeconfigPath = `${process.env.HOME}/.kube/config`;
+
+  const command = `kubectl apply -f ${filePath} --kubeconfig=${kubeconfigPath}`;
+
+  try {
+    const { stdout, stderr } = await runCommand(command);
+
+    if (stderr) {
+      console.error(`kubectl apply stderr: ${stderr}`);
+      throw new Error(`kubectl apply failed: ${stderr}`);
+    }
+
+    console.log(`kubectl apply stdout: ${stdout}`);
+  } catch (error) {
+    console.error(`Error applying YAML file ${filePath}:`, error);
+    throw error;
+  }
+}
+
 
 export const healthPlugin = createBackendPlugin({
   pluginId: 'health',
@@ -30,9 +78,7 @@ export const healthPlugin = createBackendPlugin({
       async init({ rootHttpRouter, logger }) {
         const router = Router();
 
-
         router.use(express.json());
-
 
         // for reading the catalog or chart data in k0rdnet catalog/apps
         router.get('/liveness', async (request, response) => {
@@ -77,7 +123,8 @@ export const healthPlugin = createBackendPlugin({
         router.post('/create-resource', async (request, response) => {
           logger.info('Received request to /create-resource');
           const payload = request.body as CreateResourcePayload;
-          // logger.info('Payload received:', { payload }); // Log the entire payload
+          logger.info('Payload received:', payload as any);
+
 
           // Basic Validation
           if (!payload || typeof payload !== 'object') {
@@ -96,37 +143,61 @@ export const healthPlugin = createBackendPlugin({
             return response.status(400).json({ message: 'Missing required fields: templateId, templateApiVersion, templateKind, configuration are required.' });
           }
 
+
           try {
             const generatedResource: any = {
               apiVersion: templateApiVersion,
               kind: templateKind,
               metadata: {
-                name: configuration.clusterName || configuration.clusterNameSuffix || `${templateId}-generated-${Date.now()}`,
-                labels: {
-                  'app.kubernetes.io/managed-by': 'visualizer-tool',
-                  'template-id': templateId,
-                },
-                // You might want to add namespace or other metadata from configuration
+                name: configuration.metadataName,
+                namespace: configuration.metadataNamespace,
+                // labels: {
+                //   'app.kubernetes.io/managed-by': 'visualizer-tool',
+                //   'template-id': templateId,
+                // },
               },
               spec: {
-                ...configuration, // Spread the main configuration properties
+                template: configuration.specTemplate,
+                credential: configuration.specCredential,
+                config: {
+                  clusterLabels: {}, // Assuming this is always empty for this template
+                  region: configuration.specConfigRegion,
+                  controlPlane: {
+                    instanceType: configuration.specConfigControlPlaneInstanceType,
+                  },
+                  worker: {
+                    instanceType: configuration.specConfigWorkerInstanceType,
+                  },
+                  // Add other config fields if needed based on the template
+                },
+                serviceSpec: {
+                  services: Object.keys(addons)
+                    .filter(addonKey => addons[addonKey] === true)
+                    .map(addonKey => {
+                      const service = serviceData[addonKey];
+                      if (service && service.name) {
+                        return {
+                          template: service.name,
+                          name: addonKey,
+                          namespace: service.namespace || 'kcm-system'
+                        };
+                      }
+                      return null;
+                    })
+                    .filter(service => service !== null),
+                  priority: 100,
+                },
               },
             };
 
 
             const yamlString = yaml.dump(generatedResource, { indent: 2 });
 
-            // Install the helm chart in the kind cluster
-            logger.info(`Installing ArangoDB Helm chart for template: ${templateId}`);
 
-            // Execute helm install command using child_process
+
             const { exec } = require('child_process');
 
             const helmInstallCommands: { command: string; name: string }[] = [];
-            // helmInstallCommands.push({
-            //   command: 'helm install kube-arangodb oci://ghcr.io/k0rdent/catalog/charts/kube-arangodb-service-template',
-            //   name: 'kube-arangodb-service-template'
-            // });
 
             if (addons && typeof addons === 'object') {
               for (const addonKey in addons) {
@@ -141,8 +212,11 @@ export const healthPlugin = createBackendPlugin({
                 }
               }
             }
+
+
             console.log(serviceInstallMap, "zxc")
             console.log(helmInstallCommands, "asd")
+            console.log(serviceData, "kikiam")
 
 
             const installedCharts: string[] = [];
@@ -201,6 +275,34 @@ export const healthPlugin = createBackendPlugin({
               });
             }
 
+            // Generate unique filename
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+            const fileName = `${configuration.metadataName}-${timestamp}.yaml`;
+            const outputDir = '/tmp'
+            const filePath = path.join(outputDir, fileName);
+
+            // Write YAML to file
+            await fs.promises.writeFile(filePath, yamlString, 'utf8');
+            console.log(`YAML file written to: ${filePath}`);
+
+            // Apply the YAML file using kubectl
+            const kubeconfigPath = process.env.HOME + '/.kube/config';
+
+            // First check if cluster templates are accessible
+            await runCommand(`kubectl get clustertemplate.k0rdent.mirantis.com -A --kubeconfig=${kubeconfigPath}`);
+
+            // Apply the generated YAML file
+            const command = `kubectl apply -f ${filePath} --kubeconfig=${kubeconfigPath}`;
+            const { stdout, stderr } = await runCommand(command);
+
+            if (stderr && !stderr.includes('Warning')) {
+              console.error(`kubectl stderr: ${stderr}`);
+              throw new Error(`kubectl apply failed with stderr: ${stderr}`);
+            }
+
+            console.log(`Successfully applied YAML file: ${filePath}`);
+            console.log(`kubectl stdout: ${stdout}`);
+
             logger.info(`Successfully generated YAML and installed Helm chart for template: ${templateId}`);
 
             // Respond to the frontend
@@ -211,7 +313,7 @@ export const healthPlugin = createBackendPlugin({
               generatedYaml: yamlString,
               helmInstalled: true,
               installedCharts,
-          });
+            });
           } catch (error: any) {
             logger.error(`Error processing /create-resource payload: ${error.message}`, {
               // payload,
@@ -242,10 +344,8 @@ const fetchAndProcessYaml = async (url: string): Promise<AppEntity | null> => {
   if (githubToken) {
     headers.Authorization = `token ${githubToken}`;
   }
-
   console.log(`Workspaceing YAML from ${url}`);
   const response = await fetch(url, { headers });
-
   if (!response.ok) {
     console.error(`Failed to fetch ${url}: ${response.status} ${response.statusText}`);
     // Throwing an error here will stop the processing for this specific URL,
@@ -254,29 +354,24 @@ const fetchAndProcessYaml = async (url: string): Promise<AppEntity | null> => {
   }
   const text = await response.text();
   let data: any; // Using 'any' as yaml.load can return various types
-
   try {
     data = yaml.load(text); // yaml.load from js-yaml
   } catch (error: any) {
     console.warn(`Skipping ${url}: YAML parsing failed - ${error.message}`);
     return null; // Skip if YAML is malformed
   }
-
   if (!data || typeof data !== 'object' || data === null || Array.isArray(data)) {
     console.warn(`Skipping ${url}: YAML content is invalid, not an object, or is an array.`);
     return null; // Skip if not a valid object structure
   }
-
   // Check the 'type' field
   const type = data.type as string | undefined;
-
   if (type === 'infra') {
     console.info(`Skipping ${url}: YAML is of type 'infra'.`);
     return null; // Skip 'infra' type entities
   }
-
   if (data.title as string == "Pure") {
-    console.info(`Skipddping ${url}: YAML is of type 'infra'.`);
+    console.info(`skipping ${url}: YAML is of type 'infra'.`);
     return null;
   }
 
@@ -297,17 +392,51 @@ const fetchAndProcessYaml = async (url: string): Promise<AppEntity | null> => {
       .filter(line => line.trim().startsWith('helm install'));
 
     // Join commands together with proper spacing
-    const helmCommands = helmCommandLines.join('\n');
+    let helmCommands = helmCommandLines.join('\n');
+
+    helmCommands = helmCommands?.replace("install", " upgrade --install ")
+
+    helmCommands = helmCommands
+      .split('\n')
+  .map(line => `${line} -n kcm-system`)
+  .join('\n');
 
     return helmCommands.trim() === '' ? undefined : helmCommands;
   };
 
+  const extractServiceTemplateName = (verifyCode: string | undefined): string | undefined => {
+    if (typeof verifyCode !== 'string') {
+      return undefined;
+    }
+
+    // Remove code block markers if present
+    const cleanedCode = verifyCode.replace(/^~~~bash\n/, '').replace(/\n~~~$/, '');
+
+    // Look for lines with service template names (after comments)
+    const templateNameRegex = /^#.*\s+(\S+-\d+-\d+-\d+)\s+true/m;
+    const match = cleanedCode.match(templateNameRegex);
+
+    if (match && match[1]) {
+      return match[1];
+    }
+
+    return undefined;
+  };
+
   // If type is not 'infra' or type field is missing, treat as an "app"
   // and extract specified fields.
-  
-  serviceInstallMap[(data.title as string).toLowerCase()] = extractHelmInstallCommands(data.install_code);
+  if (typeof data.title === 'string' && typeof serviceInstallMap !== 'undefined') {
+    serviceInstallMap[(data.title as string).toLowerCase()] = extractHelmInstallCommands(data.install_code);
+  }
 
-  
+
+  serviceData[(data.title as string).toLocaleLowerCase()] = {
+    // template: data.template,
+    name: extractServiceTemplateName(data.verify_code),
+    namespace: "kcm-system",
+  };
+
+
   const appEntity: AppEntity = {
     title: typeof data.title === 'string' ? data.title : undefined,
     description: typeof data.description === 'string' ? data.description : undefined,
@@ -315,10 +444,10 @@ const fetchAndProcessYaml = async (url: string): Promise<AppEntity | null> => {
     logo: typeof data.logo === 'string' ? data.logo : undefined,
     sourceUrl: url,
     install_code: extractHelmInstallCommands(data.install_code),
+    serviceTemplateName: extractServiceTemplateName(data.verify_code), // Extract and add the service template name
   };
 
   // console.log(`Processed app entity from ${url}:`, appEntity);
-
   console.log(`Processed app entity from ${url}:`);
   return appEntity;
 };
