@@ -26,6 +26,7 @@ import ErrorIcon from '@material-ui/icons/Error';
 import CheckCircleIcon from '@material-ui/icons/CheckCircle'; // For success message
 
 
+
 const TemplateCard: React.FC<TemplateCardProps> = ({ template, onChoose }) => {
   const classes = useStyles();
   return (

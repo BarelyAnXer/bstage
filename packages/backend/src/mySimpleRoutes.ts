@@ -83,6 +83,8 @@ export const healthPlugin = createBackendPlugin({
         // for reading the catalog or chart data in k0rdnet catalog/apps
         router.get('/liveness', async (request, response) => {
 
+          console.log("doomed")
+
           const target = "https://github.com/k0rdent/catalog/blob/main/apps"
 
           try {
@@ -336,7 +338,7 @@ export const healthPlugin = createBackendPlugin({
 
 
 const fetchAndProcessYaml = async (url: string): Promise<AppEntity | null> => {
-  const githubToken = "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"; // WARNING: Hardcoded token
+  const githubToken = "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"; // WARNING: Hardcoded token
   const headers: Record<string, string> = {
     // It's good practice to request raw content directly for YAML files from GitHub
     'Accept': 'application/vnd.github.v3.raw',
@@ -454,7 +456,7 @@ const fetchAndProcessYaml = async (url: string): Promise<AppEntity | null> => {
 
 // Reads github url and returns all the YAML URLS 
 const discoverYamlFiles = async (target: string) => {
-  const githubToken = "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"
+  const githubToken = "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"
   const urlParts = parseGitHubUrl(target);
 
   console.log(urlParts)
