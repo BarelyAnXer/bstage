@@ -6,7 +6,6 @@ import { promisify } from 'util';
 import { exec } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
-import dotenv from 'dotenv';
 
 interface CreateResourcePayload {
   templateId: string;
@@ -36,8 +35,6 @@ let serviceData: {
 } = {}
 
 const execAsync = promisify(exec);
-dotenv.config();
-const github_token = process.env.GITHUB_TOKEN;
 
 async function runCommand(command: string): Promise<{ stdout: string; stderr: string }> {
   console.log(`Executing: ${command}`);
@@ -341,7 +338,7 @@ export const healthPlugin = createBackendPlugin({
 
 
 const fetchAndProcessYaml = async (url: string): Promise<AppEntity | null> => {
-  const githubToken = github_token 
+  const githubToken = "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"; // WARNING: Hardcoded token
   const headers: Record<string, string> = {
     // It's good practice to request raw content directly for YAML files from GitHub
     'Accept': 'application/vnd.github.v3.raw',
@@ -459,7 +456,7 @@ const fetchAndProcessYaml = async (url: string): Promise<AppEntity | null> => {
 
 // Reads github url and returns all the YAML URLS 
 const discoverYamlFiles = async (target: string) => {
-  const githubToken = github_token
+  const githubToken = "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"
   const urlParts = parseGitHubUrl(target);
 
   console.log(urlParts)
