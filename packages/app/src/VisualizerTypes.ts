@@ -1,4 +1,3 @@
-
 interface ConfigField {
   id: string;
   label: string;
@@ -35,7 +34,6 @@ interface LivenessResponse {
   processedEntities: AppEntity[];
 }
 
-
 // --- TemplateCardProps and TemplateCard component (NO CHANGES) ---
 interface TemplateCardProps {
   template: TemplateData;
@@ -50,4 +48,14 @@ interface ConfigurationPageProps {
   isSubmitting: boolean; // New prop
   submitError: string | null; // New prop
   submitSuccessMessage: string | null; // New prop
+}
+
+interface Region {
+  code: string;
+  name: string;
+}
+
+interface VisualizerInstanceType {
+  type: string;
+  description: string;
 }
