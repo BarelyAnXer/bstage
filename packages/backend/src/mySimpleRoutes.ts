@@ -155,7 +155,7 @@ export const healthPlugin = createBackendPlugin({
               kind: templateKind,
               metadata: {
                 name: configuration.metadataName,
-                namespace: configuration.metadataNamespace,
+                namespace: "kcm-system" 
                 // labels: {
                 //   'app.kubernetes.io/managed-by': 'visualizer-tool',
                 //   'template-id': templateId,
@@ -297,16 +297,16 @@ export const healthPlugin = createBackendPlugin({
             await runCommand(`kubectl get clustertemplate.k0rdent.mirantis.com -A --kubeconfig=${kubeconfigPath}`);
 
             // Apply the generated YAML file
-            const command = `kubectl apply -f ${filePath} --kubeconfig=${kubeconfigPath}`;
-            const { stdout, stderr } = await runCommand(command);
+            // const command = `kubectl apply -f ${filePath} --kubeconfig=${kubeconfigPath}`;
+            // const { stdout, stderr } = await runCommand(command);
 
-            if (stderr && !stderr.includes('Warning')) {
-              console.error(`kubectl stderr: ${stderr}`);
-              throw new Error(`kubectl apply failed with stderr: ${stderr}`);
-            }
+            // if (stderr && !stderr.includes('Warning')) {
+            //   console.error(`kubectl stderr: ${stderr}`);
+            //   throw new Error(`kubectl apply failed with stderr: ${stderr}`);
+            // }
 
-            console.log(`Successfully applied YAML file: ${filePath}`);
-            console.log(`kubectl stdout: ${stdout}`);
+            // console.log(`Successfully applied YAML file: ${filePath}`);
+            // console.log(`kubectl stdout: ${stdout}`);
 
             logger.info(`Successfully generated YAML and installed Helm chart for template: ${templateId}`);
 

@@ -1,12 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import {
   Grid,
-  Card,
-  CardContent,
   Typography,
   Button,
   Box,
-  IconButton,
   TextField,
   Stepper,
   Step,
@@ -15,63 +12,15 @@ import {
   Checkbox,
   FormControlLabel,
   CircularProgress,
+  Divider,
 } from '@material-ui/core';
-import useStyles from   "./Visualizer.styles"
+import useStyles from './Visualizer.styles';
 import { Content, Header, Page, Progress } from '@backstage/core-components';
-import FilterListIcon from '@material-ui/icons/FilterList';
-import StarBorderIcon from '@material-ui/icons/StarBorder';
-import AccountCircleIcon from '@material-ui/icons/AccountCircle';
 import ArrowBackIcon from '@material-ui/icons/ArrowBack';
 import ErrorIcon from '@material-ui/icons/Error';
 import CheckCircleIcon from '@material-ui/icons/CheckCircle'; // For success message
-
-
-
-const TemplateCard: React.FC<TemplateCardProps> = ({ template, onChoose }) => {
-  const classes = useStyles();
-  return (
-    <Card className={classes.card}>
-      <Box className={classes.cardHeader}>
-        <Box>
-          <Typography className={classes.cardCategory} gutterBottom>
-            {template.category}
-          </Typography>
-          <Typography variant="h6" component="h2" className={classes.cardTitle}>
-            {template.title}
-          </Typography>
-        </Box>
-        <Box>
-          <IconButton size="small" className={classes.iconButton} aria-label="filter">
-            <FilterListIcon fontSize="small" />
-          </IconButton>
-          <IconButton size="small" className={classes.iconButton} aria-label="star">
-            <StarBorderIcon fontSize="small" />
-          </IconButton>
-        </Box>
-      </Box>
-      <CardContent className={classes.cardDescription}>
-        <Typography variant="body2" component="p">
-          {template.description}
-        </Typography>
-      </CardContent>
-      <Box className={classes.cardActions}>
-        <Box className={classes.userInfo}>
-          <AccountCircleIcon className={classes.userAvatar} />
-          <Typography variant="caption">{template.user}</Typography>
-        </Box>
-        <Button
-          variant="contained"
-          size="small"
-          className={classes.chooseButton}
-          onClick={() => onChoose(template)}
-        >
-          CHOOSE
-        </Button>
-      </Box>
-    </Card>
-  );
-};
-
+import { initialTemplatesArray } from './VisualizerData';
+import { VisualizerTemplateCard } from './VisualizerTemplateCard';
 
 const ConfigurationPage: React.FC<ConfigurationPageProps> = ({
   template,
@@ -83,25 +32,26 @@ const ConfigurationPage: React.FC<ConfigurationPageProps> = ({
   submitSuccessMessage,
 }) => {
   const classes = useStyles();
-  const steps = ['Configuration', 'Advanced Options', 'Review & Submit'];
+  const steps = ['Configuration', 'Deploy Services', 'Review & Submit'];
   const [activeStep, setActiveStep] = useState(0);
 
-  const initialFormValues = template.configFields?.reduce((acc, field) => {
-    acc[field.id] = field.defaultValue;
-    return acc;
-  }, {} as Record<string, string>) || {};
+  const initialFormValues =
+    template.configFields?.reduce((acc, field) => {
+      acc[field.id] = field.defaultValue;
+      return acc;
+    }, {} as Record<string, string>) || {};
 
-  const [formValues, setFormValues] = useState<Record<string, string>>(initialFormValues);
+  const [formValues, setFormValues] =
+    useState<Record<string, string>>(initialFormValues);
 
   useEffect(() => {
     setFormValues(
       template.configFields?.reduce((acc, field) => {
         acc[field.id] = field.defaultValue;
         return acc;
-      }, {} as Record<string, string>) || {}
+      }, {} as Record<string, string>) || {},
     );
   }, [template]);
-
 
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = event.target;
@@ -114,7 +64,8 @@ const ConfigurationPage: React.FC<ConfigurationPageProps> = ({
   const handleNext = () => {
     if (activeStep < steps.length - 1) {
       setActiveStep(prevActiveStep => prevActiveStep + 1);
-      if (activeStep === steps.length - 2) { // About to go to Review step
+      if (activeStep === steps.length - 2) {
+        // About to go to Review step
         onReview(formValues);
       }
     }
@@ -129,9 +80,9 @@ const ConfigurationPage: React.FC<ConfigurationPageProps> = ({
   };
 
   const handleSubmit = () => {
-    console.log("Final Configuration to be submitted to backend:", formValues);
+    console.log('Final Configuration to be submitted to backend:', formValues);
     onSubmitConfiguration(formValues);
-  }
+  };
 
   const renderFieldsForStep = (stepIndex: number) => {
     return template.configFields
@@ -150,7 +101,19 @@ const ConfigurationPage: React.FC<ConfigurationPageProps> = ({
                 }
                 label={field.label}
               />
-              {field.helperText && <Typography variant="caption" display="block" style={{ color: '#718096', marginLeft: '32px', marginTop: '-8px' }}>{field.helperText}</Typography>}
+              {field.helperText && (
+                <Typography
+                  variant="caption"
+                  display="block"
+                  style={{
+                    color: '#718096',
+                    marginLeft: '32px',
+                    marginTop: '-8px',
+                  }}
+                >
+                  {field.helperText}
+                </Typography>
+              )}
             </div>
           );
         }
@@ -182,11 +145,21 @@ const ConfigurationPage: React.FC<ConfigurationPageProps> = ({
         </Typography>
       </Box>
 
-      <Stepper activeStep={activeStep} alternativeLabel className={classes.stepper}>
-        {steps.map((label) => (
+      <Stepper
+        activeStep={activeStep}
+        alternativeLabel
+        className={classes.stepper}
+      >
+        {steps.map(label => (
           <Step key={label}>
             <StepLabel
-              StepIconProps={{ classes: { root: classes.stepLabel, active: classes.stepLabel, completed: classes.stepLabel } }}
+              StepIconProps={{
+                classes: {
+                  root: classes.stepLabel,
+                  active: classes.stepLabel,
+                  completed: classes.stepLabel,
+                },
+              }}
               classes={{ label: classes.stepLabel }}
             >
               {label}
@@ -197,7 +170,11 @@ const ConfigurationPage: React.FC<ConfigurationPageProps> = ({
 
       {activeStep === 0 && ( // Basic Configuration
         <Box className={classes.formSection}>
-          <Typography variant="h6" gutterBottom style={{ color: '#E5E7EB', marginBottom: '16px' }}>
+          <Typography
+            variant="h6"
+            gutterBottom
+            style={{ color: '#E5E7EB', marginBottom: '16px' }}
+          >
             Basic Configuration Options
           </Typography>
           {renderFieldsForStep(0)}
@@ -206,31 +183,62 @@ const ConfigurationPage: React.FC<ConfigurationPageProps> = ({
 
       {activeStep === 1 && ( // Advanced Options / Addons
         <Box className={classes.formSection}>
-          <Typography variant="h6" gutterBottom style={{ color: '#E5E7EB', marginBottom: '16px' }}>
-            Advanced Options & Add-ons
+          <Typography
+            variant="h6"
+            gutterBottom
+            style={{ color: '#E5E7EB', marginBottom: '16px' }}
+          >
+            Services
           </Typography>
           {renderFieldsForStep(1)}
-          {(!template.configFields?.some(f => f.stepGroup === 1)) &&
-            <Typography style={{ color: '#a0aec0' }}>No advanced options or add-ons available for this template.</Typography>
-          }
+          {!template.configFields?.some(f => f.stepGroup === 1) && (
+            <Typography style={{ color: '#a0aec0' }}>
+              No advanced options or add-ons available for this template.
+            </Typography>
+          )}
         </Box>
       )}
 
-      {activeStep === steps.length - 1 && ( // Review Step
+      {activeStep === steps.length - 1 && (
         <Box className={classes.formSection}>
-          <Typography variant="h6" gutterBottom style={{ color: '#E5E7EB', marginBottom: '16px' }}>
+          <Typography
+            variant="h6"
+            gutterBottom
+            style={{ color: '#E5E7EB', marginBottom: '16px' }}
+          >
             Review Your Configuration
           </Typography>
-          {template.configFields?.map(field => (
-            <Box key={field.id} mb={2}>
-              <Typography variant="subtitle2" style={{ color: '#9CA3AF' }}>{field.label}:</Typography>
-              <Typography variant="body1" style={{ color: '#F3F4F6' }}>
-                {field.type === 'checkbox'
-                  ? (formValues[field.id] === 'true' ? 'Enabled' : 'Disabled')
-                  : (formValues[field.id] || field.defaultValue)}
-              </Typography>
-            </Box>
-          ))}
+
+          <Paper
+            elevation={3}
+            style={{
+              padding: '16px',
+              backgroundColor: '#1F2937',
+              borderRadius: '12px',
+            }}
+          >
+            {template.configFields?.map(field => {
+              const value = formValues[field.id];
+              const showField =
+                field.type === 'checkbox' ? value === 'true' : Boolean(value);
+
+              if (!showField) return null;
+
+              return (
+                <Box key={field.id} mb={2}>
+                  <Typography variant="subtitle2" style={{ color: '#9CA3AF' }}>
+                    {field.label}
+                  </Typography>
+                  <Typography variant="body1" style={{ color: '#F3F4F6' }}>
+                    {field.type === 'checkbox' ? 'Enabled' : value}
+                  </Typography>
+                  <Divider
+                    style={{ margin: '8px 0', backgroundColor: '#374151' }}
+                  />
+                </Box>
+              );
+            })}
+          </Paper>
         </Box>
       )}
 
@@ -241,118 +249,58 @@ const ConfigurationPage: React.FC<ConfigurationPageProps> = ({
             Error: {submitError}
           </Typography>
         )}
-        {submitSuccessMessage && !submitError && ( // Only show success if no error
-           <Typography className={classes.successText}>
-            <CheckCircleIcon fontSize="small" style={{ marginRight: '8px' }} />
-            {submitSuccessMessage}
-          </Typography>
-        )}
-         <Box flexGrow={1} /> {/* Pushes buttons to the right */}
+        {submitSuccessMessage &&
+          !submitError && ( // Only show success if no error
+            <Typography className={classes.successText}>
+              <CheckCircleIcon
+                fontSize="small"
+                style={{ marginRight: '8px' }}
+              />
+              {submitSuccessMessage}
+            </Typography>
+          )}
+        <Box flexGrow={1} /> {/* Pushes buttons to the right */}
         <Box className={classes.configActions}>
-            <Button
+          <Button
             variant="contained"
             className={classes.backButton}
             onClick={handleBackNav}
             startIcon={<ArrowBackIcon />}
             disabled={isSubmitting}
-            >
+          >
             {activeStep === 0 ? 'Back to Templates' : 'Back'}
-            </Button>
+          </Button>
 
-            {activeStep < steps.length - 1 && (
+          {activeStep < steps.length - 1 && (
             <Button
-                variant="contained"
-                className={classes.nextButton}
-                onClick={handleNext}
-                disabled={isSubmitting}
+              variant="contained"
+              className={classes.nextButton}
+              onClick={handleNext}
+              disabled={isSubmitting}
             >
-                Next
+              Next
             </Button>
-            )}
+          )}
 
-            {activeStep === steps.length - 1 && (
+          {activeStep === steps.length - 1 && (
             <Button
-                variant="contained"
-                className={classes.createButton} // Keep existing style name
-                onClick={handleSubmit}
-                disabled={isSubmitting}
+              variant="contained"
+              className={classes.createButton} // Keep existing style name
+              onClick={handleSubmit}
+              disabled={isSubmitting}
             >
-                {isSubmitting ? <CircularProgress size={24} color="inherit" /> : 'Submit to Create'}
+              {isSubmitting ? (
+                <CircularProgress size={24} color="inherit" />
+              ) : (
+                'Apply'
+              )}
             </Button>
-            )}
+          )}
         </Box>
       </Box>
     </Paper>
   );
 };
-
-
-// --- Initial Templates Data (Update with yamlKind and yamlApiVersion) ---
-const initialTemplatesArray: TemplateData[] = [
-  {
-    id: 'azure-cluster',
-    category: 'clusterdeployment',
-    title: 'Azure Cluster Deployment',
-    description: 'Deploys a Cluster resource for Azure using backend processing.',
-    user: 'user:guest',
-    yamlKind: 'ClusterDeployment',
-    yamlApiVersion: 'hive.openshift.io/v1',
-    configFields: [
-      { id: 'clusterNameSuffix', label: 'Cluster Name Suffix', defaultValue: 'dev', helperText: 'Suffix for the cluster name (e.g., dev, prod)', type: 'text', stepGroup: 0 },
-      { id: 'baseDomain', label: 'Base Domain', defaultValue: 'example.com', helperText: 'The base domain for the cluster.', type: 'text', stepGroup: 0 },
-      { id: 'controlPlaneFlavor', label: 'Control Plane Machine Flavor', defaultValue: 'Standard_DS2_v2', helperText: 'Azure VM size for control plane nodes', type: 'text', stepGroup: 0 },
-      { id: 'workerNodeFlavor', label: 'Worker Node Machine Flavor', defaultValue: 'Standard_D2_v2', helperText: 'Azure VM size for worker nodes', type: 'text', stepGroup: 0 },
-    ],
-  },
-  {
-    id: 'openstack-cluster',
-    category: 'clusterdeployment',
-    title: 'OpenStack Cluster Deployment',
-    description: 'Deploys a Cluster resource for OpenStack using backend processing.',
-    user: 'user:guest',
-    yamlKind: 'ClusterDeployment',
-    yamlApiVersion: 'hive.openshift.io/v1alpha1', // Example, adjust as needed
-    configFields: [
-      { id: 'clusterName', label: 'Cluster Name', defaultValue: 'my-openstack-cluster', helperText: 'Name of the OpenStack cluster', type: 'text', stepGroup: 0 },
-      { id: 'nodeCount', label: 'Node Count', defaultValue: '3', helperText: 'Number of worker nodes', type: 'number', stepGroup: 0 },
-      {
-        id: 'floatingIpEnabled',
-        label: 'Enable Floating IP for API',
-        defaultValue: 'true',
-        helperText: 'Assign a floating IP to the Kubernetes API server.',
-        type: 'checkbox',
-        stepGroup: 1,
-      },
-    ],
-  },
-  // --- NEW AWS K0RDENT CLUSTER TEMPLATE ---
-  {
-    id: 'aws-k0rdent-cluster',
-    category: 'clusterdeployment',
-    title: 'AWS k0rdent Cluster Deployment',
-    description: 'Deploys a k0rdent.mirantis.com/v1alpha1 ClusterDeployment for AWS.',
-    user: 'user:guest',
-    yamlKind: 'ClusterDeployment',
-    yamlApiVersion: 'k0rdent.mirantis.com/v1alpha1',
-    configFields: [
-      // Metadata fields
-      { id: 'metadataName', label: 'ClusterDeployment Name', defaultValue: 'my-aws-clusterdeployment1', helperText: 'Name of the ClusterDeployment resource (metadata.name)', type: 'text', stepGroup: 0 },
-      { id: 'metadataNamespace', label: 'Namespace', defaultValue: 'kcm-system', helperText: 'Namespace for the ClusterDeployment (metadata.namespace)', type: 'text', stepGroup: 0 },
-      // Spec fields
-      { id: 'specTemplate', label: 'Specification Template Name', defaultValue: 'aws-standalone-cp-0-2-0', helperText: 'Name of the template to use (spec.template)', type: 'text', stepGroup: 0 },
-      { id: 'specCredential', label: 'Credential Name', defaultValue: 'aws-cluster-identity-cred', helperText: 'Credential to use for the cluster (spec.credential)', type: 'text', stepGroup: 0 },
-      // Spec.config fields
-      { id: 'specConfigRegion', label: 'AWS Region', defaultValue: 'us-east-2', helperText: 'AWS region for the cluster deployment (spec.config.region)', type: 'text', stepGroup: 0 },
-      { id: 'specConfigControlPlaneInstanceType', label: 'Control Plane Instance Type', defaultValue: 't3.small', helperText: 'EC2 instance type for control plane nodes (spec.config.controlPlane.instanceType)', type: 'text', stepGroup: 0 },
-      { id: 'specConfigWorkerInstanceType', label: 'Worker Node Instance Type', defaultValue: 't3.small', helperText: 'EC2 instance type for worker nodes (spec.config.worker.instanceType)', type: 'text', stepGroup: 0 },
-      // Note: spec.config.clusterLabels is an empty object in the example YAML.
-      // If it needs to be configurable, you could add a field like:
-      // { id: 'specConfigClusterLabels', label: 'Cluster Labels (JSON string)', defaultValue: '{}', helperText: 'e.g., {"key": "value"}', type: 'text', stepGroup: 1 },
-      // The backend would then need to parse this JSON string. For now, assuming it's defaulted to {} by the backend if not provided.
-    ],
-  },
-];
-
 
 // --- Main Visualizer Component ---
 type View = 'templateList' | 'configure';
@@ -362,18 +310,26 @@ const BACKEND_API_ENDPOINT = 'http://localhost:7007/health/create-resource';
 export const Visualizer = () => {
   const classes = useStyles();
   const [currentView, setCurrentView] = useState<View>('templateList');
-  const [selectedTemplate, setSelectedTemplate] = useState<TemplateData | null>(null);
-  const [/*configurationValues*/, setConfigurationValues] = useState<Record<string, string> | null>(null); // Kept for review step logic
+  const [selectedTemplate, setSelectedTemplate] = useState<TemplateData | null>(
+    null,
+  );
+  const [, /*configurationValues*/ setConfigurationValues] = useState<Record<
+    string,
+    string
+  > | null>(null); // Kept for review step logic
 
-  const [templates, setTemplates] = useState<TemplateData[]>(initialTemplatesArray);
+  const [templates, setTemplates] = useState<TemplateData[]>(
+    initialTemplatesArray,
+  );
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
   // New state for submission handling
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const [submitSuccessMessage, setSubmitSuccessMessage] = useState<string | null>(null);
-
+  const [submitSuccessMessage, setSubmitSuccessMessage] = useState<
+    string | null
+  >(null);
 
   useEffect(() => {
     const fetchAddonsAndUpdateTemplates = async () => {
@@ -385,24 +341,36 @@ export const Visualizer = () => {
       try {
         const response = await fetch('http://localhost:7007/health/liveness');
         if (!response.ok) {
-          throw new Error(`API request failed for addons: ${response.status} ${response.statusText}`);
+          throw new Error(
+            `API request failed for addons: ${response.status} ${response.statusText}`,
+          );
         }
         const data: LivenessResponse = await response.json();
-        console.log("Liveness check response (addons):", data);
+        console.log('Liveness check response (addons):', data);
 
         let addonConfigFields: ConfigField[] = [];
 
         if (data.processedEntities && data.processedEntities.length > 0) {
           addonConfigFields = data.processedEntities.map((app, index) => ({
-            id: app.title?.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') || `addon-${app.sourceUrl.split('/').pop()?.split('.')[0] || index}`,
-            label: `${app.title || 'Unnamed Addon'} (Add-on)`,
+            id:
+              app.title
+                ?.toLowerCase()
+                .replace(/\s+/g, '-')
+                .replace(/[^a-z0-9-]/g, '') ||
+              `addon-${app.sourceUrl.split('/').pop()?.split('.')[0] || index}`,
+            label: `${app.title || 'Unnamed Addon'}`,
             defaultValue: 'false',
-            helperText: app.summary || app.description || `Enable or disable the ${app.title || 'addon'}.`,
+            helperText:
+              app.summary ||
+              app.description ||
+              `Enable or disable the ${app.title || 'addon'}.`,
             type: 'checkbox',
             stepGroup: 1, // Addons are typically in the "Advanced Options" step
           }));
         } else {
-          console.log('No addon entities received from API or the list is empty.');
+          console.log(
+            'No addon entities received from API or the list is empty.',
+          );
         }
 
         // Merge addons into existing templates - this logic might need adjustment
@@ -411,22 +379,30 @@ export const Visualizer = () => {
         setTemplates(currentTemplates =>
           currentTemplates.map(template => {
             // Example: Only add these addons to specific templates like 'azure-cluster' or all templates
-            if (template.id === 'azure-cluster' || template.id === 'aws-k0rdent-cluster') { // Decide which templates get these addons
-              const baseConfigFields = template.configFields?.filter(
-                field => !addonConfigFields.some(addon => addon.id === field.id) // Avoid duplicates
-              ) || [];
+            if (
+              template.id === 'azure-cluster' ||
+              template.id === 'aws-k0rdent-cluster'
+            ) {
+              // Decide which templates get these addons
+              const baseConfigFields =
+                template.configFields?.filter(
+                  field =>
+                    !addonConfigFields.some(addon => addon.id === field.id), // Avoid duplicates
+                ) || [];
               return {
                 ...template,
                 configFields: [...baseConfigFields, ...addonConfigFields],
               };
             }
             return template;
-          })
+          }),
         );
-
       } catch (err) {
-        const message = err instanceof Error ? err.message : 'An unknown error occurred while fetching addons.';
-        console.error("Error fetching or processing addon data:", message);
+        const message =
+          err instanceof Error
+            ? err.message
+            : 'An unknown error occurred while fetching addons.';
+        console.error('Error fetching or processing addon data:', message);
         setError(message);
       } finally {
         setIsLoading(false);
@@ -436,9 +412,9 @@ export const Visualizer = () => {
     fetchAddonsAndUpdateTemplates();
   }, []);
 
-
   const handleChooseTemplate = (template: TemplateData) => {
-    const currentTemplateData = templates.find(t => t.id === template.id) || template;
+    const currentTemplateData =
+      templates.find(t => t.id === template.id) || template;
     setSelectedTemplate(currentTemplateData);
     setCurrentView('configure');
     setConfigurationValues(null); // Clear old config values
@@ -455,22 +431,29 @@ export const Visualizer = () => {
   };
 
   const handleFinalReview = (configVals: Record<string, string>) => {
-    console.log("Configuration ready for review:", configVals);
+    console.log('Configuration ready for review:', configVals);
     setConfigurationValues(configVals);
     setSubmitError(null); // Clear errors when moving to review step
     setSubmitSuccessMessage(null);
   };
 
   // --- MODIFIED FUNCTION TO SEND DATA TO BACKEND ---
-  const handleSubmitConfigurationAction = async (configVals: Record<string, string>) => {
-    console.log("SUBMIT button clicked. Configuration to be sent to backend:", configVals);
+  const handleSubmitConfigurationAction = async (
+    configVals: Record<string, string>,
+  ) => {
+    console.log(
+      'SUBMIT button clicked. Configuration to be sent to backend:',
+      configVals,
+    );
     setIsSubmitting(true);
     setSubmitError(null);
     setSubmitSuccessMessage(null);
     setConfigurationValues(configVals); // Store current config values
 
     if (!selectedTemplate) {
-      setSubmitError('Error: No template selected. Cannot submit configuration.');
+      setSubmitError(
+        'Error: No template selected. Cannot submit configuration.',
+      );
       console.error('No selectedTemplate for submission.');
       setIsSubmitting(false);
       return;
@@ -493,14 +476,24 @@ export const Visualizer = () => {
 
       // Check if the field ID suggests it's an addon (e.g., fetched from liveness and marked as stepGroup 1)
       // This assumes addon fields are specifically identifiable or all stepGroup 1 checkboxes are addons.
-      const isPotentiallyAddon = field.id.startsWith('addon-') || (field.label && field.label.includes('(Add-on)'));
+      const isPotentiallyAddon =
+        field.id.startsWith('addon-') ||
+        (field.label && field.label.includes('(Add-on)'));
 
-      if (field.stepGroup === 1 && field.type === 'checkbox' && isPotentiallyAddon) {
-        if (processedValue === true) { // Only include enabled addons
-           // Clean up addon ID for the key if necessary, or use the raw field.id
-           // This part depends on how the backend expects addon keys.
-           // Using a simple approach for now:
-           const addonKey = field.id.replace(/^addon-/i, '').replace(/\s+/g, '-').toLowerCase();
+      if (
+        field.stepGroup === 1 &&
+        field.type === 'checkbox' &&
+        isPotentiallyAddon
+      ) {
+        if (processedValue === true) {
+          // Only include enabled addons
+          // Clean up addon ID for the key if necessary, or use the raw field.id
+          // This part depends on how the backend expects addon keys.
+          // Using a simple approach for now:
+          const addonKey = field.id
+            .replace(/^addon-/i, '')
+            .replace(/\s+/g, '-')
+            .toLowerCase();
           addons[addonKey] = true;
         }
       } else {
@@ -516,7 +509,10 @@ export const Visualizer = () => {
       addons: addons,
     };
 
-    console.log("Payload to send to backend:", JSON.stringify(payload, null, 2));
+    console.log(
+      'Payload to send to backend:',
+      JSON.stringify(payload, null, 2),
+    );
 
     try {
       const response = await fetch(BACKEND_API_ENDPOINT, {
@@ -531,23 +527,29 @@ export const Visualizer = () => {
 
       if (!response.ok) {
         // Use message from backend if available, otherwise default error
-        const errorMsg = responseData?.message || responseData?.error || `Request failed with status ${response.status}`;
+        const errorMsg =
+          responseData?.message ||
+          responseData?.error ||
+          `Request failed with status ${response.status}`;
         throw new Error(errorMsg);
       }
 
       console.log('Backend submission successful:', responseData);
-      setSubmitSuccessMessage(responseData.message || 'Configuration submitted successfully!');
+      setSubmitSuccessMessage(
+        responseData.message || 'Configuration submitted successfully!',
+      );
       // Example: if (responseData.yaml) { setGeneratedYamlForDisplay(responseData.yaml); }
-
     } catch (e) {
-      const message = e instanceof Error ? e.message : 'An unknown error occurred during submission.';
+      const message =
+        e instanceof Error
+          ? e.message
+          : 'An unknown error occurred during submission.';
       console.error('Error submitting configuration to backend:', message);
       setSubmitError(message);
     } finally {
       setIsSubmitting(false);
     }
   };
-
 
   // --- UI RENDERING WITH LOADING/ERROR STATES ---
   if (isLoading) {
@@ -557,21 +559,30 @@ export const Visualizer = () => {
         <Content>
           <Box className={classes.loadingContainer}>
             <Progress />
-            <Typography style={{ marginTop: '16px' }}>Fetching latest configurations...</Typography>
+            <Typography style={{ marginTop: '16px' }}>
+              Fetching latest configurations...
+            </Typography>
           </Box>
         </Content>
       </Page>
     );
   }
 
-  if (error && !isLoading) { // Ensure error is shown only if not in initial loading
+  if (error && !isLoading) {
+    // Ensure error is shown only if not in initial loading
     return (
       <Page themeId="tool">
-        <Header title="Error" subtitle="Failed to load template configurations" />
+        <Header
+          title="Error"
+          subtitle="Failed to load template configurations"
+        />
         <Content>
           <Box className={classes.loadingContainer}>
             <ErrorIcon style={{ fontSize: 48, color: 'red' }} />
-            <Typography variant="h6" style={{ marginTop: '16px', color: 'red' }}>
+            <Typography
+              variant="h6"
+              style={{ marginTop: '16px', color: 'red' }}
+            >
               Oops! Something went wrong.
             </Typography>
             <Typography style={{ color: '#ffcccb' }}>{error}</Typography>
@@ -595,19 +606,31 @@ export const Visualizer = () => {
   return (
     <Page themeId="tool">
       <Header
-        title={currentView === 'templateList' ? "K0rdent Tempaltes" : selectedTemplate?.title || "Configure Template"}
-        subtitle={currentView === 'templateList' ? "Browse and choose your templates" : selectedTemplate?.description || "Set your options"}
+        title={
+          currentView === 'templateList'
+            ? 'K0rdent Tempaltes'
+            : selectedTemplate?.title || 'Configure Template'
+        }
+        subtitle={
+          currentView === 'templateList'
+            ? 'Browse and choose your templates'
+            : selectedTemplate?.description || 'Set your options'
+        }
       />
       <Content>
         {currentView === 'templateList' && (
           <>
-            <Typography variant="h4" component="h1" className={classes.pageTitle}>
+            <Typography
+              variant="h4"
+              component="h1"
+              className={classes.pageTitle}
+            >
               Templates
             </Typography>
             <Grid container spacing={3} className={classes.root}>
-              {templates.map((template) => (
+              {templates.map(template => (
                 <Grid item xs={12} sm={6} md={4} key={template.id}>
-                  <TemplateCard
+                  <VisualizerTemplateCard
                     template={template}
                     onChoose={handleChooseTemplate}
                   />
