@@ -112,6 +112,32 @@ export const ConfigurationPage: React.FC<ConfigurationPageProps> = ({
               )}
             </div>
           );
+        } else if (field.type === 'dropdown') {
+          return (
+            <div key={field.id} className={classes.formField}>
+              <TextField
+                select
+                name={field.id}
+                label={field.label}
+                value={formValues[field.id] || ''}
+                variant="outlined"
+                fullWidth
+                className={classes.formField}
+                helperText={field.helperText}
+                onChange={handleInputChange}
+                SelectProps={{
+                  native: true,
+                }}
+              >
+                <option value="">Select an option</option>
+                {field.options?.map(option => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </TextField>
+            </div>
+          );
         }
         return (
           <TextField

@@ -1,3 +1,46 @@
+export const staticRegions: Region[] = [
+  { code: 'us-east-1', name: 'US East (N. Virginia)' },
+  { code: 'us-east-2', name: 'US East (Ohio)' },
+  { code: 'us-west-1', name: 'US West (N. California)' },
+  { code: 'us-west-2', name: 'US West (Oregon)' },
+  { code: 'af-south-1', name: 'Africa (Cape Town)' },
+  { code: 'ap-east-1', name: 'Asia Pacific (Hong Kong)' },
+  { code: 'ap-south-1', name: 'Asia Pacific (Mumbai)' },
+  { code: 'ap-northeast-3', name: 'Asia Pacific (Osaka)' },
+  { code: 'ap-northeast-2', name: 'Asia Pacific (Seoul)' },
+  { code: 'ap-southeast-1', name: 'Asia Pacific (Singapore)' },
+  { code: 'ap-southeast-2', name: 'Asia Pacific (Sydney)' },
+  { code: 'ap-northeast-1', name: 'Asia Pacific (Tokyo)' },
+  { code: 'ca-central-1', name: 'Canada (Central)' },
+  { code: 'eu-central-1', name: 'Europe (Frankfurt)' },
+  { code: 'eu-west-1', name: 'Europe (Ireland)' },
+  { code: 'eu-west-2', name: 'Europe (London)' },
+  { code: 'eu-south-1', name: 'Europe (Milan)' },
+  { code: 'eu-west-3', name: 'Europe (Paris)' },
+  { code: 'eu-north-1', name: 'Europe (Stockholm)' },
+  { code: 'me-south-1', name: 'Middle East (Bahrain)' },
+  { code: 'sa-east-1', name: 'South America (São Paulo)' },
+];
+
+export const instanceTypes: VisualizerInstanceType[] = [
+  { type: 't2.micro', description: 'General Purpose - Micro Instance' },
+  {
+    type: 't3.micro',
+    description: 'General Purpose - Micro Instance (Burstable)',
+  },
+  { type: 't3a.micro', description: 'General Purpose -  AMD Micro Instance' },
+  { type: 'm5.large', description: 'General Purpose - Large Instance' },
+  { type: 'c5.large', description: 'Compute Optimized - Large Instance' },
+  { type: 'r5.large', description: 'Memory Optimized - Large Instance' },
+  {
+    type: 'c6g.medium',
+    description: 'Compute Optimized - ARM Medium Instance',
+  },
+  { type: 'm6i.large', description: 'General Purpose - Intel Large Instance' },
+  { type: 'r6g.large', description: 'Memory Optimized - ARM Large Instance' },
+  { type: 'g4dn.xlarge', description: 'Accelerated Computing - GPU Instance' },
+];
+
 export const initialTemplatesArray: TemplateData[] = [
   {
     id: 'azure-cluster',
@@ -79,7 +122,7 @@ export const initialTemplatesArray: TemplateData[] = [
       },
     ],
   },
-  // --- NEW AWS K0RDENT CLUSTER TEMPLATE ---
+  // --- UPDATED AWS K0RDENT CLUSTER TEMPLATE ---
   {
     id: 'aws-k0rdent-cluster',
     category: 'clusterdeployment',
@@ -120,77 +163,45 @@ export const initialTemplatesArray: TemplateData[] = [
       {
         id: 'specConfigRegion',
         label: 'AWS Region',
-        defaultValue: 'us-east-2',
+        defaultValue: 'us-east-2', // This is a valid code from staticRegions
         helperText:
           'AWS region for the cluster deployment (spec.config.region)',
-        type: 'text',
+        type: 'dropdown', // Changed from 'text'
         stepGroup: 0,
+        options: staticRegions.map(region => ({
+          // Populated from staticRegions
+          value: region.code,
+          label: `${region.name} (${region.code})`,
+        })),
       },
       {
         id: 'specConfigControlPlaneInstanceType',
         label: 'Control Plane Instance Type',
-        defaultValue: 't3.small',
+        defaultValue: 't3.micro', // Updated to match an option from instanceTypes
         helperText:
           'EC2 instance type for control plane nodes (spec.config.controlPlane.instanceType)',
-        type: 'text',
+        type: 'dropdown', // Changed from 'text'
         stepGroup: 0,
+        options: instanceTypes.map(it => ({
+          // Populated from instanceTypes
+          value: it.type,
+          label: `${it.type} - ${it.description}`,
+        })),
       },
       {
         id: 'specConfigWorkerInstanceType',
         label: 'Worker Node Instance Type',
-        defaultValue: 't3.small',
+        defaultValue: 't3.micro', // Updated to match an option from instanceTypes
         helperText:
           'EC2 instance type for worker nodes (spec.config.worker.instanceType)',
-        type: 'text',
+        type: 'dropdown', // Changed from 'text'
         stepGroup: 0,
+        options: instanceTypes.map(it => ({
+          // Populated from instanceTypes
+          value: it.type,
+          label: `${it.type} - ${it.description}`,
+        })),
       },
-      // Note: spec.config.clusterLabels is an empty object in the example YAML.
-      // If it needs to be configurable, you could add a field like:
-      // { id: 'specConfigClusterLabels', label: 'Cluster Labels (JSON string)', defaultValue: '{}', helperText: 'e.g., {"key": "value"}', type: 'text', stepGroup: 1 },
-      // The backend would then need to parse this JSON string. For now, assuming it's defaulted to {} by the backend if not provided.
     ],
   },
-];
-
-export const staticRegions: Region[] = [
-  { code: 'us-east-1', name: 'US East (N. Virginia)' },
-  { code: 'us-east-2', name: 'US East (Ohio)' },
-  { code: 'us-west-1', name: 'US West (N. California)' },
-  { code: 'us-west-2', name: 'US West (Oregon)' },
-  { code: 'af-south-1', name: 'Africa (Cape Town)' },
-  { code: 'ap-east-1', name: 'Asia Pacific (Hong Kong)' },
-  { code: 'ap-south-1', name: 'Asia Pacific (Mumbai)' },
-  { code: 'ap-northeast-3', name: 'Asia Pacific (Osaka)' },
-  { code: 'ap-northeast-2', name: 'Asia Pacific (Seoul)' },
-  { code: 'ap-southeast-1', name: 'Asia Pacific (Singapore)' },
-  { code: 'ap-southeast-2', name: 'Asia Pacific (Sydney)' },
-  { code: 'ap-northeast-1', name: 'Asia Pacific (Tokyo)' },
-  { code: 'ca-central-1', name: 'Canada (Central)' },
-  { code: 'eu-central-1', name: 'Europe (Frankfurt)' },
-  { code: 'eu-west-1', name: 'Europe (Ireland)' },
-  { code: 'eu-west-2', name: 'Europe (London)' },
-  { code: 'eu-south-1', name: 'Europe (Milan)' },
-  { code: 'eu-west-3', name: 'Europe (Paris)' },
-  { code: 'eu-north-1', name: 'Europe (Stockholm)' },
-  { code: 'me-south-1', name: 'Middle East (Bahrain)' },
-  { code: 'sa-east-1', name: 'South America (São Paulo)' },
-];
-
-export const instanceTypes: VisualizerInstanceType[] = [
-  { type: 't2.micro', description: 'General Purpose - Micro Instance' },
-  {
-    type: 't3.micro',
-    description: 'General Purpose - Micro Instance (Burstable)',
-  },
-  { type: 't3a.micro', description: 'General Purpose -  AMD Micro Instance' },
-  { type: 'm5.large', description: 'General Purpose - Large Instance' },
-  { type: 'c5.large', description: 'Compute Optimized - Large Instance' },
-  { type: 'r5.large', description: 'Memory Optimized - Large Instance' },
-  {
-    type: 'c6g.medium',
-    description: 'Compute Optimized - ARM Medium Instance',
-  },
-  { type: 'm6i.large', description: 'General Purpose - Intel Large Instance' },
-  { type: 'r6g.large', description: 'Memory Optimized - ARM Large Instance' },
-  { type: 'g4dn.xlarge', description: 'Accelerated Computing - GPU Instance' },
 ];

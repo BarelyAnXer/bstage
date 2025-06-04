@@ -3,9 +3,14 @@ interface ConfigField {
   label: string;
   defaultValue: string;
   helperText: string;
-  type?: 'text' | 'select' | 'checkbox' | 'number'; // Added 'number'
-  options?: string[];
-  stepGroup: number; // 0 for basic config, 1 for advanced options/addons
+  type?: 'text' | 'select' | 'checkbox' | 'number' | 'dropdown';
+  options?: ConfigFieldOption[];
+  stepGroup: number;
+}
+
+interface ConfigFieldOption {
+  value: string;
+  label: string;
 }
 
 interface TemplateData {
