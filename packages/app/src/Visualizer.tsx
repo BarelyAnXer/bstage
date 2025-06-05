@@ -1,17 +1,11 @@
 import { useEffect, useState } from 'react';
-import {
-  Grid,
-  Typography,
-  Button,
-  Box,
-} from '@material-ui/core';
+import { Grid, Typography, Button, Box } from '@material-ui/core';
 import useStyles from './Visualizer.styles';
 import { Content, Header, Page, Progress } from '@backstage/core-components';
 import ErrorIcon from '@material-ui/icons/Error';
 import { initialTemplatesArray } from './VisualizerData';
 import { VisualizerTemplateCard } from './VisualizerTemplateCard';
 import { ConfigurationPage } from './ConfigurationPage';
-
 
 // --- Main Visualizer Component ---
 type View = 'templateList' | 'configure';
@@ -48,6 +42,9 @@ export const Visualizer = () => {
       setError(null);
       setSubmitError(null); // Clear previous submission errors on reload
       setSubmitSuccessMessage(null); // Clear previous success messages
+
+      const response = await fetch('http://localhost:7007/health/pods');
+      console.log(response.json(), "here")
 
       try {
         const response = await fetch('http://localhost:7007/health/liveness');
@@ -319,7 +316,7 @@ export const Visualizer = () => {
       <Header
         title={
           currentView === 'templateList'
-            ? 'K0rdent Tempaltes'
+            ? 'K0rdent Templates'
             : selectedTemplate?.title || 'Configure Template'
         }
         subtitle={
@@ -338,6 +335,7 @@ export const Visualizer = () => {
             >
               Templates
             </Typography>
+
             <Grid container spacing={3} className={classes.root}>
               {templates.map(template => (
                 <Grid item xs={12} sm={6} md={4} key={template.id}>
