@@ -45,7 +45,7 @@ export const initialTemplatesArray: TemplateData[] = [
   {
     id: 'azure-cluster',
     category: 'clusterdeployment',
-    title: 'Test Cluster Deployment',
+    title: 'Azure Cluster Deployment',
     description:
       'Deploys a Cluster resource for Azure using backend processing.',
     user: 'user:guest',
