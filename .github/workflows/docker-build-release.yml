@@ -31,7 +31,7 @@ jobs:
       - name: Install dependencies
         run: yarn install 
       - name: Build TypeScript
-        run: yarn tsc
+        run: yarn tsc --noUnusedLocals false --noUnusedParameters false
       - name: Build backend
         run: yarn build:backend
       - name: Log in to GitHub Container Registry

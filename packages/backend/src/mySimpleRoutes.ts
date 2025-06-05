@@ -9,7 +9,7 @@ import { promisify } from 'util';
 import { exec } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
-import dotenv from 'dotenv';
+import * as dotenv from 'dotenv';
 import { listPods } from './KubernetesService';
 
 interface CreateResourcePayload {
