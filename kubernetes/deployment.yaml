@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backstage-k0rdent 
+  namespace: default
+  labels:
+    app: backstage-k0rdent 
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backstage-k0rdent
+  template:
+    metadata:
+      labels:
+        app: backstage-k0rdent
+    spec:
+      containers:
+        - name: backstage-k0rdent
+          image: ghcr.io/barelyanxer/backstage:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 7007
+          env:
+            - name: HOST
+              value: "0.0.0.0"

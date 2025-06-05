@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: backstage-k0rdent
+  namespace: default 
+  labels:
+    app: backstage-k0rdent 
+spec:
+  type: NodePort # Exposes the Service on each Node's IP at a static port (the NodePort).
+  selector:
+    app:
+      backstage-k0rdent 
+  ports:
+    - name: http # Optional: A descriptive name for the port.
+      protocol: TCP
+      port:
+        7007 # Port the Service will listen on internally within the cluster.
+        # This is the port other services in the cluster would use to reach this service.
+      targetPort:
+        7007 # Port on your application container where the app is running.
+        # This matches 'containerPort: 7007' in your Deployment.
+      nodePort:
+        30007 # The static port on each Kind node where this service will be available.
+        # You can choose any port in the default range (30000-32767).
+        # If you omit this, Kubernetes will assign a random port from the range.
+        # For the 'kubectl port-forward' method below, the specific value of nodePort
+        # is less critical than the service 'port'.
