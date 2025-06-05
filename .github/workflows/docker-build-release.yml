@@ -1,13 +1,11 @@
 name: Build and Publish Docker Image
-
 on:
   push:
     tags:
       - 'v*'
   release:
     types: [published]
-  workflow_dispatch:  # Manual trigger
-
+  workflow_dispatch: # Manual trigger
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: barelyanxer/backstage
@@ -52,17 +50,17 @@ jobs:
             type=raw,value=${{ env.MANUAL_TAG }},enable=${{ github.event_name == 'workflow_dispatch' }}
           flavor: |
             latest=auto
-
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
-          platforms: linux/amd64  # Explicitly build for Linux amd64 architecture
+          file: packages/backend/Dockerfile # Specify the Dockerfile location
+          platforms: linux/amd64 # Explicitly build for Linux amd64 architecture
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          build-args: |
-            VITE_SUPABASE_URL=${{ secrets.VITE_SUPABASE_URL }}
-            VITE_SUPABASE_ANON_KEY=${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          # build-args: |
+          #   VITE_SUPABASE_URL=${{ secrets.VITE_SUPABASE_URL }}
+          #   VITE_SUPABASE_ANON_KEY=${{ secrets.VITE_SUPABASE_ANON_KEY }}
           cache-from: type=gha
-          cache-to: type=gha,mode=max 
+          cache-to: type=gha,mode=max
