@@ -5,7 +5,7 @@ on:
       - 'v*'
   release:
     types: [published]
-  workflow_dispatch:  # Manual trigger
+  workflow_dispatch: # Manual trigger
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: barelyanxer/backstage
@@ -29,7 +29,7 @@ jobs:
           node-version: '22.11.0'
           cache: 'yarn'
       - name: Install dependencies
-        run: yarn install 
+        run: yarn install
       - name: Build TypeScript
         run: yarn tsc --noUnusedLocals false --noUnusedParameters false
       - name: Build backend
@@ -60,13 +60,10 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: packages/backend/Dockerfile  # Specify the Dockerfile location
-          platforms: linux/amd64  # Explicitly build for Linux amd64 architecture
+          file: packages/backend/Dockerfile # Specify the Dockerfile location
+          platforms: linux/amd64,linux/arm64 # Build for both x86_64 and ARM64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          build-args: |
-            VITE_SUPABASE_URL=${{ secrets.VITE_SUPABASE_URL }}
-            VITE_SUPABASE_ANON_KEY=${{ secrets.VITE_SUPABASE_ANON_KEY }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
