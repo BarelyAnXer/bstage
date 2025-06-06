@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: backstage-k0rdent 
-  namespace: default
+  namespace: backstage-k0rdent 
   labels:
     app: backstage-k0rdent 
 spec:
@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: backstage-k0rdent
-          image: ghcr.io/barelyanxer/backstage:latest
+          image: ghcr.io/barelyanxer/backstage:sha-b06f226
           imagePullPolicy: Always
           ports:
             - containerPort: 7007
