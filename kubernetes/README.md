@@ -28,6 +28,9 @@ Apply the Kubernetes manifests:
 # Creating KinD Cluster
 kind create cluster --config kind-cluster.yaml --name kind
 
+# Create Namespace
+kubectl create namespace backstage-k0rdent
+
 # Apply Deployment
 kubectl apply -f deployment.yaml
 
