@@ -32,6 +32,13 @@ auth:
   providers:
     guest: {}
 
+proxy:
+  '/capi-visualizer':
+    target: 'http://capi-visualizer.capi-visualizer.svc.cluster.local:8081'
+    changeOrigin: true
+    pathRewrite:
+      '^/capi-visualizer': ''
+
 catalog:
   # Overrides the default list locations from app-config.yaml as these contain example data.
   # See https://backstage.io/docs/features/software-catalog/#adding-components-to-the-catalog for more details

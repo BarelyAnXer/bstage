@@ -50,6 +50,11 @@ proxy:
     changeOrigin: true
     pathRewrite:
       '^/opencost': ''
+  '/capi-visualizer':
+    target: 'http://capi-visualizer.capi-visualizer.svc.cluster.local:8081'
+    changeOrigin: true
+    pathRewrite:
+      '^/capi-visualizer': ''
 
 
 opencost:
