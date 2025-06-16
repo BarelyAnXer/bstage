@@ -42,6 +42,8 @@ let serviceData: {
 const execAsync = promisify(exec);
 dotenv.config();
 const github_token = process.env.GITHUB_TOKEN;
+console.log(process.env.APP_BASE_URL)
+
 
 async function runCommand(
   command: string,

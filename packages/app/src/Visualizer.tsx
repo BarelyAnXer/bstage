@@ -6,11 +6,10 @@ import ErrorIcon from '@material-ui/icons/Error';
 import { initialTemplatesArray } from './VisualizerData';
 import { VisualizerTemplateCard } from './VisualizerTemplateCard';
 import { ConfigurationPage } from './ConfigurationPage';
+import { useApi, configApiRef } from '@backstage/core-plugin-api';
 
 // --- Main Visualizer Component ---
 type View = 'templateList' | 'configure';
-
-const BACKEND_API_ENDPOINT = 'http://localhost:7007/health/create-resource';
 
 export const Visualizer = () => {
   const classes = useStyles();
@@ -36,6 +35,11 @@ export const Visualizer = () => {
     string | null
   >(null);
 
+  const configApi = useApi(configApiRef);
+  const backendUrl = configApi.getString('backend.baseUrl');
+
+  const BACKEND_API_ENDPOINT = `${backendUrl}/health/create-resource`;
+
   useEffect(() => {
     const fetchAddonsAndUpdateTemplates = async () => {
       setIsLoading(true);
@@ -43,11 +47,11 @@ export const Visualizer = () => {
       setSubmitError(null); // Clear previous submission errors on reload
       setSubmitSuccessMessage(null); // Clear previous success messages
 
-      const response = await fetch('http://localhost:7007/health/pods');
-      console.log(response.json(), "here")
+      const response = await fetch(`${backendUrl}/health/pods`);
+      console.log(response.json(), 'here');
 
       try {
-        const response = await fetch('http://localhost:7007/health/liveness');
+        const response = await fetch(`${backendUrl}/health/liveness`);
         if (!response.ok) {
           throw new Error(
             `API request failed for addons: ${response.status} ${response.statusText}`,

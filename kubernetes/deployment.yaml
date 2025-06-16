@@ -17,10 +17,16 @@ spec:
     spec:
       containers:
         - name: backstage-k0rdent
-          image: ghcr.io/barelyanxer/backstage:sha-b06f226
+          image: ghcr.io/barelyanxer/backstage:test8
           imagePullPolicy: Always
           ports:
             - containerPort: 7007
           env:
             - name: HOST
               value: "0.0.0.0"
+            - name: APP_BASE_URL
+              value: ""
+            - name: BACKEND_BASE_URL
+              value: ""
+            - name: BACKEND_CORS_ORIGIN
+              value: ""

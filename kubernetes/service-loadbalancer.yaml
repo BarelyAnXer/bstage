@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: backstage-k0rdent
+  namespace: backstage-k0rdent
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 80          # External port (what users access)
+      targetPort: 7007  # Internal container port
+      protocol: TCP
+  selector:
+    app: backstage-k0rdent
