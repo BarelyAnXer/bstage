@@ -420,11 +420,11 @@ const fetchAndProcessYaml = async (url: string): Promise<AppEntity | null> => {
     // It's good practice to request raw content directly for YAML files from GitHub
     Accept: 'application/vnd.github.v3.raw',
   };
-  if (githubToken) {
-    headers.Authorization = `token ${githubToken}`;
-  }
+  // if (githubToken) {
+  //   headers.Authorization = `token ${githubToken}`;
+  // }
   console.log(`Workspaceing YAML from ${url}`);
-  const response = await fetch(url, { headers });
+  const response = await fetch(url);
   if (!response.ok) {
     console.error(
       `Failed to fetch ${url}: ${response.status} ${response.statusText}`,
