@@ -28,6 +28,20 @@ backend:
       #   ca: # if you have a CA file and want to verify it you can uncomment this section
       #     $file: <file-path>/ca/server.crt
 
+
+# Gives backstage access to the local cluster using a ServiceAccount
+kubernetes:
+  serviceLocatorMethod:
+    type: 'multiTenant'
+  clusterLocatorMethods:
+    - type: 'config'
+      clusters:
+        - name: in-cluster
+          url: https://kubernetes.default.svc
+          authProvider: 'serviceAccount'
+          skipTLSVerify: false
+          serviceAccountToken: ''
+          caFile: '/var/run/secrets/kubernetes.io/serviceaccount/ca.crt'
 auth:
   providers:
     guest:

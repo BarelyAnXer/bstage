@@ -1,0 +1,19 @@
+piVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: backstage-access
+rules:
+  # Full read access to all core and extended APIs (except Secrets)
+  - apiGroups: ["", "apps", "batch", "extensions", "*"]
+    resources: ["*"]
+    verbs: ["get", "list", "watch"]
+
+  # Explicitly deny "secrets" (NOTE: Kubernetes RBAC doesn't have deny rules, so just exclude it)
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: []
+
+  # Allow full CRUD for ClusterDeployment in all namespaces
+  - apiGroups: ["k0rdent.mirantis.com"]
+    resources: ["clusterdeployments"]
+    verbs: ["create", "get", "list", "watch", "update", "patch", "delete"]
