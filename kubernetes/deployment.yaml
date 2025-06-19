@@ -16,6 +16,7 @@ spec:
         app: backstage-k0rdent
     spec:
       containers:
+        serviceAccountName: backstage
         - name: backstage-k0rdent
           image: ghcr.io/barelyanxer/backstage:test8
           imagePullPolicy: Always
