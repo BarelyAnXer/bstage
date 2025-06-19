@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backstage-k0rdent 
+  namespace: backstage-k0rdent 
+  labels:
+    app: backstage-k0rdent 
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backstage-k0rdent
+  template:
+    metadata:
+      labels:
+        app: backstage-k0rdent
+    spec:
+      containers:
+        - name: backstage-k0rdent
+          image: ghcr.io/barelyanxer/backstage:test8
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 7007
+          env:
+            - name: HOST
+              value: "0.0.0.0"
+            - name: APP_BASE_URL
+              value: "http://a7a66c63bbedf47578c9a9cc9be1ef75-1773491198.us-east-1.elb.amazonaws.com"
+            - name: BACKEND_BASE_URL
+              value: "http://a7a66c63bbedf47578c9a9cc9be1ef75-1773491198.us-east-1.elb.amazonaws.com"
+            - name: BACKEND_CORS_ORIGIN
+              value: "http://a7a66c63bbedf47578c9a9cc9be1ef75-1773491198.us-east-1.elb.amazonaws.com"
