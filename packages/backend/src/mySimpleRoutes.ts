@@ -415,11 +415,11 @@ export const healthPlugin = createBackendPlugin({
 });
 
 const fetchAndProcessYaml = async (url: string): Promise<AppEntity | null> => {
-  const githubToken = github_token;
-  const headers: Record<string, string> = {
-    // It's good practice to request raw content directly for YAML files from GitHub
-    Accept: 'application/vnd.github.v3.raw',
-  };
+  // const githubToken = github_token;
+  // const headers: Record<string, string> = {
+  //   // It's good practice to request raw content directly for YAML files from GitHub
+  //   Accept: 'application/vnd.github.v3.raw',
+  // };
   // if (githubToken) {
   //   headers.Authorization = `token ${githubToken}`;
   // }
