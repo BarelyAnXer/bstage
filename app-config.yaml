@@ -5,6 +5,9 @@ app:
 organization:
   name: My Company
 
+capi:
+  baseUrl: ${CAPI_VISUALIZER_URL}
+
 backend:
   # Used for enabling authentication, secret is shared by all backend plugins
   # See https://backstage.io/docs/auth/service-to-service-auth for
@@ -20,6 +23,10 @@ backend:
   csp:
     connect-src: ["'self'", 'http:', 'https:']
     upgrade-insecure-requests: false
+    frame-src: 
+      - "'self'"
+      - "${CAPI_VISUALIZER_URL}"
+    style-src: ["'self'", "'unsafe-inline'"]
     # Content-Security-Policy directives follow the Helmet format: https://helmetjs.github.io/#reference
     # Default Helmet Content-Security-Policy values can be removed by setting the key to false
   cors:
@@ -44,21 +51,6 @@ integrations:
     #   apiBaseUrl: https://ghe.example.net/api/v3
     #   token: ${GHE_TOKEN}
 
-proxy:
-  '/opencost':
-    target: 'http://localhost:9003'
-    changeOrigin: true
-    pathRewrite:
-      '^/opencost': ''
-  '/capi-visualizer':
-    target: 'http://capi-visualizer.capi-visualizer.svc.cluster.local:8081'
-    changeOrigin: true
-    pathRewrite:
-      '^/capi-visualizer': ''
-
-
-opencost:
-  baseUrl: http://localhost:7007/api/proxy/opencost
   ### Example for how to add a proxy endpoint for the frontend.
   ### A typical reason to do this is to handle HTTPS and CORS for internal services.
   # endpoints:

@@ -77,16 +77,37 @@ Once that is ready, you can deploy the application to your cluster.
 1. **Create Namespace**
    ```bash
    kubectl create namespace backstage-k0rdent
+   kubectl create namespace capi-visualizer
    ```
 
 2. **Deploy LoadBalancer Service**
    ```bash
-   kubectl apply -f kubernetes/service-loadbalancer.yaml
+   kubectl apply -f kubernetes/service-backstage-loadbalancer.yaml
    ```
+
+4. **Install Cluster-API viz & prometheus (dependecies of backstage)** 
+   ```bash
+   # cluster api
+   helm upgrade --install cluster-api-visualizer cluster-api-visualizer \
+   --repo https://jont828.github.io/cluster-api-visualizer/charts \
+   -n capi-visualizer \
+   --set service.type=LoadBalancer || exit 1
+
+   # opencost
+   helm install prometheus --repo https://prometheus-community.github.io/helm-charts prometheus \
+   --namespace prometheus-system --create-namespace \
+   --set prometheus-pushgateway.enabled=false \
+   --set alertmanager.enabled=false \
+   -f https://raw.githubusercontent.com/opencost/opencost/develop/kubernetes/prometheus/extraScrapeConfigs.yaml
+   ```
+
 
 3. **Get External IP**
    ```bash
    kubectl get service backstage-k0rdent -n backstage-k0rdent
+   # Note the EXTERNAL-IP for next step
+
+   kubectl get service capi-visualizer -n capi-visualizer
    # Note the EXTERNAL-IP for next step
    ```
 
@@ -101,6 +122,8 @@ Once that is ready, you can deploy the application to your cluster.
        value: "http://YOUR_EXTERNAL_IP"
      - name: BACKEND_CORS_ORIGIN
        value: "http://YOUR_EXTERNAL_IP"
+     - name: CAPI_VISUALIZER_URL
+       value: "http://CAPI_VISUALIZER_EXTERNAL_IP:8081"
    ```
 
 5. **Deploy Application**

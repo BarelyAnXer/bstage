@@ -146,7 +146,7 @@ export const initialTemplatesArray: TemplateData[] = [
       {
         id: 'specTemplate',
         label: 'Specification Template Name',
-        defaultValue: 'aws-standalone-cp-0-2-0',
+        defaultValue: 'aws-standalone-cp-1-0-0',
         helperText: 'Name of the template to use (spec.template)',
         type: 'text',
         stepGroup: 0,
