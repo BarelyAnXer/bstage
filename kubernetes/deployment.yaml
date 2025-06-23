@@ -30,3 +30,5 @@ spec:
               value: ""
             - name: BACKEND_CORS_ORIGIN
               value: ""
+            - name: CAPI_VISUALIZER_URL
+              value: "http://YOUR_CAPI_URL:8081"
