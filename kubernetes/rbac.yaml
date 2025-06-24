@@ -1,0 +1,46 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: backstage-health-plugin
+  namespace: backstage-k0rdent 
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  # A descriptive name for the set of permissions
+  name: backstage-plugin-resource-editor
+rules:
+- apiGroups: ["k0rdent.mirantis.com"]
+  # Permissions needed for your custom resources
+  resources: ["clusterdeployments", "clustertemplates"]
+  # The "patch" verb is required for apply. Granting the others is good practice
+  # for a management tool.
+  verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+- apiGroups: [""] # "" indicates the core API group
+  # Permission needed for your listPods() function
+  resources: ["pods"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["helm.toolkit.fluxcd.io"] # Add if you use Flux HelmReleases
+  resources: ["helmreleases"]
+  verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+# Add other permissions here if your Helm charts create other resource types
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  # A descriptive name for the binding
+  name: backstage-health-plugin-binding
+subjects:
+- kind: ServiceAccount
+  # This MUST match the ServiceAccount name from the error log
+  name: backstage-health-plugin
+  # This MUST match the namespace of your plugin's pod
+  namespace: backstage-k0rdent
+roleRef:
+  kind: ClusterRole
+  # This binds the permissions defined in the ClusterRole above
+  name: backstage-plugin-resource-editor
+  apiGroup: rbac.authorization.k8s.io
