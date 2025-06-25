@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: backstage-k0rdent
-          image: ghcr.io/barelyanxer/backstage:test8
+          image: ghcr.io/barelyanxer/backstage:test
           imagePullPolicy: Always
           ports:
             - containerPort: 7007
@@ -25,10 +25,10 @@ spec:
             - name: HOST
               value: "0.0.0.0"
             - name: APP_BASE_URL
-              value: ""
+              value: "http://SERVICE_EXTERNAL_IP"
             - name: BACKEND_BASE_URL
-              value: ""
+              value: "http://SERVICE_EXTERNAL_IP"
             - name: BACKEND_CORS_ORIGIN
-              value: ""
+              value: "http://SERVICE_EXTERNAL_IP"
             - name: CAPI_VISUALIZER_URL
               value: "http://YOUR_CAPI_URL:8081"
