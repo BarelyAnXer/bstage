@@ -1,0 +1,35 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: aws-cluster-identity-secret
+  namespace: kcm-system
+  labels:
+    k0rdent.mirantis.com/component: "kcm"
+type: Opaque
+stringData:
+  AccessKeyID: ${ACCESS_KEY} 
+  SecretAccessKey: ${SECRET_KEY}
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
+kind: AWSClusterStaticIdentity
+metadata:
+  name: aws-cluster-identity
+  labels:
+    k0rdent.mirantis.com/component: "kcm"
+spec:
+  secretRef: aws-cluster-identity-secret
+  allowedNamespaces:
+    selector:
+      matchLabels: {}
+---
+apiVersion: k0rdent.mirantis.com/v1alpha1
+kind: Credential
+metadata:
+  name: aws-cluster-identity-cred
+  namespace: kcm-system
+spec:
+  description: "Credential Example"
+  identityRef:
+    apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
+    kind: AWSClusterStaticIdentity
+    name: aws-cluster-identity

@@ -15,7 +15,7 @@ spec:
       labels:
         app: backstage-k0rdent
     spec:
-      serviceAccountName: backstage-health-plugin 
+      serviceAccount: backstage-health-plugin
       containers:
         - name: backstage-k0rdent
           image: ghcr.io/barelyanxer/backstage:latest
@@ -26,10 +26,10 @@ spec:
             - name: HOST
               value: "0.0.0.0"
             - name: APP_BASE_URL
-              value: "http://SERVICE_EXTERNAL_IP"
+              value: "http://a5bc0407f0bca45a896fd7d7b7cdabcb-645936502.us-east-1.elb.amazonaws.com"
             - name: BACKEND_BASE_URL
-              value: "http://SERVICE_EXTERNAL_IP"
+              value: "http://a5bc0407f0bca45a896fd7d7b7cdabcb-645936502.us-east-1.elb.amazonaws.com"
             - name: BACKEND_CORS_ORIGIN
-              value: "http://SERVICE_EXTERNAL_IP"
+              value: "http://a5bc0407f0bca45a896fd7d7b7cdabcb-645936502.us-east-1.elb.amazonaws.com"
             - name: CAPI_VISUALIZER_URL
-              value: "http://YOUR_CAPI_URL:8081"
+              value: "http://a63c09c2d32f14d3b9f66a0bcd6945de-526794019.us-east-1.elb.amazonaws.com:8081"
