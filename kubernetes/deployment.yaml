@@ -15,6 +15,7 @@ spec:
       labels:
         app: backstage-k0rdent
     spec:
+      serviceAccountName: backstage-health-plugin 
       containers:
         - name: backstage-k0rdent
           image: ghcr.io/barelyanxer/backstage:latest
