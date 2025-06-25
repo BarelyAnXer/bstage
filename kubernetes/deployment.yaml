@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: backstage-k0rdent
-          image: ghcr.io/barelyanxer/backstage:test
+          image: ghcr.io/barelyanxer/backstage:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 7007
